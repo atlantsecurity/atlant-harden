@@ -13,10 +13,10 @@
     <AssemblyName>AtlantHarden</AssemblyName>
     <RootNamespace>AtlantHarden</RootNamespace>
     <StartupObject>AtlantHarden.App</StartupObject>
-    <Company>AtlantHarden</Company>
-    <Product>Windows Security Hardening Tool</Product>
-    <Description>Professional Windows 10/11 Security Hardening Application by AtlantHarden</Description>
-    <Copyright>Copyright © AtlantHarden $([System.DateTime]::Now.Year)</Copyright>
+    <Company>Atlant Security LTD</Company>
+    <Product>AtlantHarden — Windows Security Hardening Tool</Product>
+    <Description>Professional Windows 10/11 Security Hardening Application by Atlant Security LTD</Description>
+    <Copyright>Copyright © Atlant Security LTD $([System.DateTime]::Now.Year). All rights reserved.</Copyright>
     <Version>2.0.0</Version>
     <FileVersion>2.0.0.0</FileVersion>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>

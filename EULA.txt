@@ -1,0 +1,38 @@
+AtlantHarden — Application License (End-User Terms)
+Copyright (c) 2026 Atlant Security LTD. All rights reserved.
+
+Atlant Security LTD ("Atlant Security"), a company registered in Bulgaria,
+publishes the AtlantHarden application (the "Application"). These terms govern
+Your use of the compiled Application.
+
+1. FREE USE
+   The Application is FREE TO USE provided You do not charge any fee for its
+   use. Running it on Your own systems — personal or internal to an
+   organization — without charging anyone is free.
+
+2. COMMERCIAL USE REQUIRES A LICENSE
+   Any use of the Application for which You charge money, and any use of it to
+   secure systems as a paid product or service (for example, deploying or
+   operating it for paying clients), requires a separate commercial licensing
+   agreement with Atlant Security LTD. To obtain one, use the contact form at:
+   https://atlantsecurity.com/contact
+
+3. NO WARRANTY / USE AT YOUR OWN RISK
+   THE APPLICATION IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED. It changes system-level security settings; always create a backup
+   and a Windows System Restore Point before applying changes. TO THE MAXIMUM
+   EXTENT PERMITTED BY LAW, ATLANT SECURITY SHALL NOT BE LIABLE FOR ANY CLAIM,
+   DAMAGES, OR OTHER LIABILITY ARISING FROM OR IN CONNECTION WITH THE USE OF THE
+   APPLICATION.
+
+4. THE SOURCE CODE IS SEPARATE
+   The AtlantHarden source code is published separately, for transparency and
+   audit only, under a different source-available license that does NOT grant a
+   right to use the source. See https://github.com/atlantsecurity/atlant-harden.
+
+5. GOVERNING LAW
+   These terms are governed by the laws of Bulgaria, without regard to its
+   conflict-of-laws principles.
+
+-------------------------------------------------------------------------------
+For commercial licensing, use the contact form at https://atlantsecurity.com/contact

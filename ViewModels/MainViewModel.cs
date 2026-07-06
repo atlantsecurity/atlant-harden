@@ -341,7 +341,7 @@ namespace AtlantHarden.ViewModels
             }
         }
         
-        public string CopyrightText => $"© {DateTime.Now.Year} AtlantHarden";
+        public string CopyrightText => $"© {DateTime.Now.Year} Atlant Security LTD. All rights reserved.";
         
         private DateTime GetBuildDate()
         {
@@ -389,6 +389,7 @@ namespace AtlantHarden.ViewModels
         public ICommand ShowProfileCommand { get; private set; } = null!;
         public ICommand CreateRestorePointCommand { get; private set; } = null!;
         public ICommand OpenAtlantSecurityCommand { get; private set; } = null!;
+        public ICommand OpenLicenseContactCommand { get; private set; } = null!;
         public ICommand ToggleSidebarCommand { get; private set; } = null!;
         
         // Profile Commands
@@ -421,6 +422,7 @@ namespace AtlantHarden.ViewModels
             ShowProfileCommand = new RelayCommand(p => ShowProfileSettings(p as string));
             CreateRestorePointCommand = new AsyncRelayCommand(CreateRestorePointAsync, () => !IsProcessing);
             OpenAtlantSecurityCommand = new RelayCommand(OpenAtlantSecurityWebsite);
+            OpenLicenseContactCommand = new RelayCommand(OpenLicenseContact);
             ToggleSidebarCommand = new RelayCommand(() => IsSidebarExpanded = !IsSidebarExpanded);
             
             ApplyBasicProfileCommand = new AsyncRelayCommand(ApplyBasicProfileAsync, () => !IsProcessing);
@@ -1216,6 +1218,22 @@ namespace AtlantHarden.ViewModels
             }
         }
 
+        private void OpenLicenseContact()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://atlantsecurity.com/contact",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not open the contact form: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private async Task RefreshStatusAsync()
         {
             IsProcessing = true;
@@ -1324,7 +1342,7 @@ namespace AtlantHarden.ViewModels
                 sb.AppendLine("</table>");
             }
 
-            sb.AppendLine($"<p style='margin-top:40px;color:#6e7681;'>© {DateTime.Now.Year} AtlantHarden | https://atlantsecurity.com</p>");
+            sb.AppendLine($"<p style='margin-top:40px;color:#6e7681;'>© {DateTime.Now.Year} Atlant Security LTD | https://atlantsecurity.com</p>");
             sb.AppendLine("</body></html>");
             
             return sb.ToString();

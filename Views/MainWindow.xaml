@@ -1099,7 +1099,25 @@
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Text="{Binding CopyrightText}" FontSize="11" Foreground="#6E7681" 
+                    <!-- License -->
+                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="20" Margin="0,16,0,0">
+                        <StackPanel>
+                            <TextBlock Text="License" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,12"/>
+                            <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="13" LineHeight="20">
+                                AtlantHarden is <Run FontWeight="SemiBold" Foreground="#F0F6FC">free to use</Run> — including on your own or your organization's systems — as long as you don't charge for its use. Using it as a paid product or service, or to secure clients' systems for a fee, requires a commercial licensing agreement with <Run FontWeight="SemiBold" Foreground="#F0F6FC">Atlant Security LTD</Run>.
+                            </TextBlock>
+                            <TextBlock TextWrapping="Wrap" Foreground="#6E7681" FontSize="11" Margin="0,10,0,0">
+                                The source code is published separately for audit only, under a different license that grants no right to use the source. See the LICENSE file in the repository.
+                            </TextBlock>
+                            <Button Command="{Binding OpenLicenseContactCommand}"
+                                    Content="Request a commercial license"
+                                    Background="#238636" Foreground="White"
+                                    BorderThickness="0" Padding="16,8" Margin="0,14,0,0"
+                                    HorizontalAlignment="Left" Cursor="Hand"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="{Binding CopyrightText}" FontSize="11" Foreground="#6E7681"
                                HorizontalAlignment="Center" Margin="0,20,0,4"/>
                     <Button Command="{Binding OpenAtlantSecurityCommand}" 
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
