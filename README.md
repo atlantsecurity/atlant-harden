@@ -223,10 +223,11 @@ read and audit the code, but any *use* of it requires a paid commercial license.
 [`LICENSE`](LICENSE) for the full terms; for commercial licensing, use the
 [contact form at atlantsecurity.com](https://atlantsecurity.com/contact).
 
-The **compiled AtlantHarden application** is a separate download from
-[atlantsecurity.com](https://atlantsecurity.com/): **free for personal, non-commercial use**;
-**commercial or for-profit use of the app requires a licensing agreement** with Atlant Security LTD
-([contact form](https://atlantsecurity.com/contact)). This repository license does not govern that binary.
+The **compiled AtlantHarden application** is **free to use as long as you don't charge for its use** —
+running it on your own systems (personal or internal to an organization), without charging anyone, is
+free. **The moment you charge for use of the app — including using it to secure clients' or commercial
+systems as a paid product or service — you need a commercial licensing agreement** with Atlant Security
+LTD ([contact form](https://atlantsecurity.com/contact)). This repository license does not govern the binary.
 
 © 2026 Atlant Security LTD. All rights reserved.
 

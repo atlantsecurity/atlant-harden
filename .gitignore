@@ -16,8 +16,10 @@ publish/
 # Regenerable STIG enrichment cache (rebuilt by tools/Generate-StigCatalog.ps1)
 tools/.cache/
 
-# Release artifacts (published as GitHub Release assets, not committed)
+# Build/publish artifacts stay out of git — except the shipped release zip,
+# which is committed at the repo root (also attached to the GitHub Release).
 *.zip
+!/AtlantHarden.zip
 
 # Scratch / temp
 _stigdata/

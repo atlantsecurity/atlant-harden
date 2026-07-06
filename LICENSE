@@ -49,12 +49,15 @@ commercial license from Atlant Security.
    via the contact form at: https://atlantsecurity.com/contact
 
 5. THE COMPILED APPLICATION IS SEPARATE
-   The compiled AtlantHarden application is distributed by Atlant Security LTD
-   from its website under its own end-user terms: it is free for personal,
-   non-commercial use, and any COMMERCIAL OR FOR-PROFIT USE of the application
-   requires a separate licensing agreement with Atlant Security LTD (via the
-   contact form at https://atlantsecurity.com/contact). This License governs only
-   the Software (source) in this repository and grants no rights to that binary.
+   The compiled AtlantHarden application is distributed by Atlant Security LTD and
+   is FREE TO USE provided You do not charge any fee for its use. Running it on
+   Your own systems — personal or internal to an organization — without charging
+   anyone is free. Any use of the application for which You charge money, and any
+   use of it to secure systems as a paid product or service (for example,
+   deploying or operating it for paying clients), requires a separate commercial
+   licensing agreement with Atlant Security LTD (via the contact form at
+   https://atlantsecurity.com/contact). This License governs only the Software
+   (source) in this repository and grants no rights to that binary.
 
 6. CONTRIBUTIONS
    Atlant Security does not accept outside contributions under an open-source

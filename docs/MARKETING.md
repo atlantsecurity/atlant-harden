@@ -4,7 +4,7 @@
 
 **One click. 579 security settings. 354 DISA STIG controls. And — finally — hardening that doesn't break your machine.**
 
-Free for personal use · No account · No telemetry · Self-contained download (no .NET install required)
+Free to use · No account · No telemetry · Self-contained download (no .NET install required)
 
 ---
 
@@ -34,7 +34,7 @@ Here's the part nobody talks about. Blindly applying a DISA STIG or CIS benchmar
 | **3 one-click profiles** | Basic, Recommended, Maximum — review every setting before you apply |
 | **Full backup + restore** | Automatic pre-change backup, `.reg` export, and System Restore integration |
 | **Self-contained** | Single `.exe`, no .NET runtime to install, runs on any Windows 10/11 x64 |
-| **Free for personal use** | No account, no telemetry, no upsell — commercial/for-profit use requires a license |
+| **Free to use** | No account, no telemetry, no upsell — charging for the app's use requires a commercial license |
 
 ---
 
@@ -137,7 +137,7 @@ AtlantHarden.exe --config policy.json --apply --silent
 | **Distribution** | Single signed-ready `.exe`, ~68 MB |
 | **Backup formats** | `.reg` (Windows Registry) + JSON |
 | **Config format** | JSON |
-| **Price** | Free for personal use; commercial / for-profit use requires a license |
+| **Price** | Free to use; charging for the app's use (paid service / for clients) requires a commercial license |
 
 ---
 
