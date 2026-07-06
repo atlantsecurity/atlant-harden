@@ -57,27 +57,30 @@ function ChangeLine($s) {
 function RenderSetting($s, [bool]$showProfile) {
     $sb = [System.Text.StringBuilder]::new()
     $name = ($s.Name -replace '\s+', ' ').Trim()
-    [void]$sb.AppendLine("**$name**  ")
+    if ($name.Length -gt 130) { $name = $name.Substring(0,130).TrimEnd() + '...' }   # keep headings sane
+    [void]$sb.AppendLine("### $name")
+    [void]$sb.AppendLine()
     # What it does (+ enriched why for terse baseline settings that have a STIG twin)
     $desc = ($s.Description -replace '\s+', ' ').Trim()
-    if ($desc) { [void]$sb.AppendLine("$desc  ") }
+    if ($desc) { [void]$sb.AppendLine($desc); [void]$sb.AppendLine() }
     if (-not $s.IsStig -and $s.Path -and $desc.Length -lt 150) {
         $twin = $stigWhy[(Norm $s.Path $s.Key)]
         if ($twin) {
             $twin = ($twin -replace '\s+', ' ').Trim()
-            if ($twin.Length -gt 320) { $twin = $twin.Substring(0,320).TrimEnd() + '…' }
-            [void]$sb.AppendLine("_Why:_ $twin  ")
+            if ($twin.Length -gt 340) { $twin = $twin.Substring(0,340).TrimEnd() + '...' }
+            [void]$sb.AppendLine("*Why it matters:* $twin")
+            [void]$sb.AppendLine()
         }
     }
-    [void]$sb.AppendLine((ChangeLine $s) + "  ")
-    # Metadata line
-    $meta = @("Risk: **$($s.Risk)**")
-    if ($showProfile) { $meta += if ($s.Rec) { 'Profile: **Recommended**' } else { 'Profile: Maximum-only' } }
-    if ($s.IsStig -and $s.StigId) { $m = "STIG: $($s.StigId)"; if ($s.VulnId) { $m += " (Vuln $($s.VulnId))" }; $meta += $m }
-    if ($s.IsACSC) { $meta += 'ACSC Essential Eight' }
-    if ($s.Reboot) { $meta += 'Reboot required' }
-    [void]$sb.AppendLine("`<sub>" + ($meta -join ' &nbsp;·&nbsp; ') + "`</sub>  ")
-    if ($s.Impact) { [void]$sb.AppendLine("> ⚠ **Impact:** $(($s.Impact -replace '\s+',' ').Trim())") }
+    # Details as a clean bullet list (renders reliably on GitHub)
+    [void]$sb.AppendLine("- **Change:** " + (ChangeLine $s))
+    $meta = "- **Risk:** $($s.Risk)"
+    if ($showProfile) { $meta += if ($s.Rec) { "  &middot;  **Profile:** Recommended" } else { "  &middot;  **Profile:** Maximum-only" } }
+    if ($s.IsStig -and $s.StigId) { $meta += "  &middot;  **STIG:** $($s.StigId)"; if ($s.VulnId) { $meta += " (Vuln $($s.VulnId))" } }
+    if ($s.IsACSC) { $meta += "  &middot;  ACSC Essential Eight" }
+    if ($s.Reboot) { $meta += "  &middot;  Reboot required" }
+    [void]$sb.AppendLine($meta)
+    if ($s.Impact) { [void]$sb.AppendLine("- **&#9888; Impact:** " + (($s.Impact -replace '\s+',' ').Trim())) }
     [void]$sb.AppendLine()
     return $sb.ToString()
 }
