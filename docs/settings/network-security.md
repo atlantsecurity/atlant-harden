@@ -4,7 +4,7 @@
 
 _Removes the legacy and insecure network behaviour attackers abuse for interception and lateral movement: SMBv1 (EternalBlue/WannaCry), name-resolution poisoning (LLMNR/NetBIOS/WPAD), unsigned SMB/LDAP traffic, and anonymous enumeration of accounts and shares._
 
-**30 settings** in this category &mdash; **26** are part of the Recommended profile.
+**30 settings** on this page &mdash; **26** are part of the Recommended profile.
 
 ### Block Anonymous Everyone Access
 

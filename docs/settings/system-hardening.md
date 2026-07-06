@@ -4,7 +4,7 @@
 
 _Core OS hardening — User Account Control, exploit mitigations (SEHOP, safe DLL search order), Autorun/Autoplay, SmartScreen for downloaded files, and closing privilege-escalation holes such as AlwaysInstallElevated._
 
-**29 settings** in this category &mdash; **18** are part of the Recommended profile.
+**29 settings** on this page &mdash; **18** are part of the Recommended profile.
 
 ### Always Process Group Policy
 

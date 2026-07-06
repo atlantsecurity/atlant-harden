@@ -4,7 +4,7 @@
 
 _Applies Adobe reader hardening — Protected Mode/View sandboxing, Enhanced Security and disabling JavaScript — to blunt the malicious-PDF attacks that target the reader._
 
-**6 settings** in this category &mdash; **6** are part of the Recommended profile.
+**6 settings** on this page &mdash; **6** are part of the Recommended profile.
 
 ### Disable File Attachments
 

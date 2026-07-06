@@ -4,7 +4,7 @@
 
 _Enterprise-policy hardening for Mozilla Firefox — TLS floor, DNS-over-HTTPS, and tracking protection._
 
-**10 settings** in this category &mdash; **3** are part of the Recommended profile.
+**10 settings** on this page &mdash; **3** are part of the Recommended profile.
 
 ### Disable Default Browser Agent
 

@@ -4,7 +4,7 @@
 
 _Disables Autorun/Autoplay — the classic mechanism by which malware spreads automatically from USB drives and other removable media the instant they are inserted._
 
-**3 settings** in this category &mdash; **3** are part of the Recommended profile.
+**3 settings** on this page &mdash; **3** are part of the Recommended profile.
 
 ### Disable Autoplay
 

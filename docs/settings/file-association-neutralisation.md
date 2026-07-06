@@ -4,7 +4,7 @@
 
 _Makes script and "scrap" file types that are pure malware-delivery vectors (.js, .vbs, .hta, .wsf, .scr, .chm, ...) open in Notepad instead of executing when double-clicked. Types power users legitimately run (.bat, .ps1, .reg) are deliberately left runnable._
 
-**24 settings** in this category &mdash; **13** are part of the Recommended profile.
+**24 settings** on this page &mdash; **13** are part of the Recommended profile.
 
 ### Neutralize .bat Files
 

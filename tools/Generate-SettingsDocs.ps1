@@ -89,54 +89,70 @@ function Slug($catKey) {
     return (($cat[$catKey].t -replace '[^a-zA-Z0-9]+','-').Trim('-')).ToLower()
 }
 
-# One small, self-contained page per category. GitHub will not render a single
-# 150-300 KB markdown file (it shows raw source), so the full set is split so each
-# page renders. Every page lists ALL settings in that category, tagged Recommended
-# vs Maximum-only.
+# One self-contained page per category, kept small enough to render on GitHub
+# (GitHub shows raw source for a single 150-300 KB markdown file). Oversized
+# categories are split into evenly sized parts. Every page lists its settings in
+# the identical style, each tagged Recommended vs Maximum-only.
+$MaxPerPage = 60
+
 function WriteCategoryPages($setDir) {
     if (Test-Path $setDir) { Remove-Item (Join-Path $setDir '*.md') -Force -ErrorAction SilentlyContinue }
     New-Item -ItemType Directory -Force -Path $setDir | Out-Null
+    $pages = New-Object System.Collections.Generic.List[object]
     foreach ($ck in $cat.Keys) {
         $grp = @($data | Where-Object { $_.Category -eq $ck } | Sort-Object Name)
         if ($grp.Count -eq 0) { continue }
-        $recN = @($grp | Where-Object { $_.Rec }).Count
-        $sb = [System.Text.StringBuilder]::new()
-        [void]$sb.AppendLine("# $($cat[$ck].t)")
-        [void]$sb.AppendLine()
-        [void]$sb.AppendLine("[&larr; Recommended index](../Recommended-Settings-Explained.md) &nbsp;&middot;&nbsp; [Maximum index](../Maximum-Settings-Explained.md)")
-        [void]$sb.AppendLine()
-        [void]$sb.AppendLine("_$($cat[$ck].why)_")
-        [void]$sb.AppendLine()
-        [void]$sb.AppendLine("**$($grp.Count) settings** in this category &mdash; **$recN** are part of the Recommended profile.")
-        [void]$sb.AppendLine()
-        foreach ($s in $grp) { [void]$sb.Append((RenderSetting $s $true)) }
-        Set-Content -Path (Join-Path $setDir ("{0}.md" -f (Slug $ck))) -Value $sb.ToString() -Encoding utf8
+        if ($grp.Count -gt $MaxPerPage) {
+            $nParts = [int][math]::Ceiling($grp.Count / $MaxPerPage)
+            $per    = [int][math]::Ceiling($grp.Count / $nParts)
+        } else { $nParts = 1; $per = $grp.Count }
+        for ($i = 0; $i -lt $nParts; $i++) {
+            $lo = $i * $per
+            if ($lo -ge $grp.Count) { break }
+            $hi = [math]::Min($lo + $per - 1, $grp.Count - 1)
+            $slice = @($grp[$lo..$hi])
+            $title = $cat[$ck].t
+            $slug  = Slug $ck
+            if ($nParts -gt 1) { $title = "$title &mdash; Part $($i+1) of $nParts"; $slug = "$slug-part-$($i+1)" }
+            $recN = @($slice | Where-Object { $_.Rec }).Count
+            $sb = [System.Text.StringBuilder]::new()
+            [void]$sb.AppendLine("# $title")
+            [void]$sb.AppendLine()
+            [void]$sb.AppendLine("[&larr; Recommended index](../Recommended-Settings-Explained.md) &nbsp;&middot;&nbsp; [Maximum index](../Maximum-Settings-Explained.md)")
+            [void]$sb.AppendLine()
+            [void]$sb.AppendLine("_$($cat[$ck].why)_")
+            [void]$sb.AppendLine()
+            [void]$sb.AppendLine("**$($slice.Count) settings** on this page &mdash; **$recN** are part of the Recommended profile.")
+            [void]$sb.AppendLine()
+            foreach ($s in $slice) { [void]$sb.Append((RenderSetting $s $true)) }
+            Set-Content -Path (Join-Path $setDir "$slug.md") -Value $sb.ToString() -Encoding utf8
+            $pages.Add([pscustomobject]@{ Title = $title; File = "$slug.md"; Count = $slice.Count; RecCount = $recN })
+        }
     }
-    return @(Get-ChildItem $setDir -Filter *.md).Count
+    return $pages
 }
 
 # Small index page (renders fine) linking to each per-category page.
-function WriteIndex([bool]$recOnly, $title, $preamble, $outFile) {
+function WriteIndex([bool]$recOnly, $title, $preamble, $outFile, $pages) {
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.AppendLine("# $title")
     [void]$sb.AppendLine()
     [void]$sb.AppendLine($preamble)
     [void]$sb.AppendLine()
-    [void]$sb.AppendLine("The full set is documented **one category per page** — click a category for its complete, setting-by-setting explanation (what each does and why).")
+    [void]$sb.AppendLine("The full set is documented **one page per category** — click a page for its complete, setting-by-setting explanation (what each does and why). Large categories are split into parts.")
     [void]$sb.AppendLine()
     $col = if ($recOnly) { 'Recommended settings' } else { 'Settings' }
-    [void]$sb.AppendLine("| Category | $col |")
+    [void]$sb.AppendLine("| Page | $col |")
     [void]$sb.AppendLine("|---|---:|")
-    foreach ($ck in $cat.Keys) {
-        $grp = @($data | Where-Object { $_.Category -eq $ck })
-        $n = if ($recOnly) { @($grp | Where-Object { $_.Rec }).Count } else { $grp.Count }
+    foreach ($p in $pages) {
+        $n = if ($recOnly) { $p.RecCount } else { $p.Count }
         if ($n -le 0) { continue }
-        [void]$sb.AppendLine("| [$($cat[$ck].t)](settings/$(Slug $ck).md) | $n |")
+        [void]$sb.AppendLine("| [$($p.Title)](settings/$($p.File)) | $n |")
     }
     [void]$sb.AppendLine()
     $tot = if ($recOnly) { @($data | Where-Object { $_.Rec }).Count } else { @($data).Count }
     [void]$sb.AppendLine("**Total: $tot settings.**")
-    if (-not $recOnly) { [void]$sb.AppendLine(); [void]$sb.AppendLine("On each category page, every setting is tagged **Recommended** or **Maximum-only**.") }
+    if (-not $recOnly) { [void]$sb.AppendLine(); [void]$sb.AppendLine("On each page, every setting is tagged **Recommended** or **Maximum-only**.") }
     Set-Content -Path $outFile -Value $sb.ToString() -Encoding utf8
     Write-Output "Wrote index: $outFile"
 }
@@ -156,6 +172,6 @@ This document is the **complete reference for every setting in AtlantHarden** �
 '@
 
 $pages = WriteCategoryPages 'C:\P\winh\settings'
-WriteIndex $true  'AtlantHarden — Recommended Settings, Explained' $recPre 'C:\P\winh\Recommended-Settings-Explained.md'
-WriteIndex $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre 'C:\P\winh\Maximum-Settings-Explained.md'
-Write-Output "Wrote $pages per-category pages to C:\P\winh\settings"
+WriteIndex $true  'AtlantHarden — Recommended Settings, Explained' $recPre 'C:\P\winh\Recommended-Settings-Explained.md' $pages
+WriteIndex $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre 'C:\P\winh\Maximum-Settings-Explained.md' $pages
+Write-Output "Wrote $($pages.Count) pages to C:\P\winh\settings"

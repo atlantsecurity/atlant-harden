@@ -4,7 +4,7 @@
 
 _Enterprise-policy hardening for Google Chrome — site isolation, Enhanced Safe Browsing, TLS 1.3 hardening, DNS-over-HTTPS and certificate revocation checks._
 
-**18 settings** in this category &mdash; **9** are part of the Recommended profile.
+**18 settings** on this page &mdash; **9** are part of the Recommended profile.
 
 ### Block Outdated Plugins
 

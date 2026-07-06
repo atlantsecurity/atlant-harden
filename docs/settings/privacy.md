@@ -4,7 +4,7 @@
 
 _Reduces the data Windows sends to Microsoft and third parties — telemetry, advertising ID, location, Cortana/Bing and consumer "suggestions". These are privacy improvements rather than anti-malware controls, which is why they are excluded from the Recommended profile._
 
-**12 settings** in this category &mdash; **0** are part of the Recommended profile.
+**12 settings** on this page &mdash; **0** are part of the Recommended profile.
 
 ### Block Language List Access
 

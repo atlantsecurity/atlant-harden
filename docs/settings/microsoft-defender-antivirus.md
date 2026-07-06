@@ -4,7 +4,7 @@
 
 _Tunes the built-in antivirus itself — cloud-delivered protection, network protection, PUA (potentially unwanted application) blocking and sandboxing — so it catches more, faster, and cannot be casually paused._
 
-**9 settings** in this category &mdash; **6** are part of the Recommended profile.
+**9 settings** on this page &mdash; **6** are part of the Recommended profile.
 
 ### Disable Pause Windows Defender Scan
 

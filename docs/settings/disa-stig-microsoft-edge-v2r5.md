@@ -4,7 +4,7 @@
 
 _The full DISA Microsoft Edge STIG. Many of these are strict lockdowns (disabling sync, InPrivate, imports, autofill) that go beyond exploitation prevention and add day-to-day friction — which is why only the exploitation-relevant ones appear in the Recommended profile._
 
-**52 settings** in this category &mdash; **7** are part of the Recommended profile.
+**52 settings** on this page &mdash; **7** are part of the Recommended profile.
 
 ### A website's ability to query for payment methods must be disabled.
 

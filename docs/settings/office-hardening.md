@@ -4,7 +4,7 @@
 
 _Office documents are the single most common malware-delivery vehicle. These settings disable the features attackers weaponise — VBA macros, Dynamic Data Exchange (DDE) and ActiveX — and block macros carried in files that came from the internet._
 
-**8 settings** in this category &mdash; **8** are part of the Recommended profile.
+**8 settings** on this page &mdash; **8** are part of the Recommended profile.
 
 ### Block Macros from Internet
 

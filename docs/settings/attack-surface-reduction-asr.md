@@ -4,7 +4,7 @@
 
 _Microsoft Defender ASR rules block the specific behaviours malware relies on — Office spawning executables, scripts launching payloads, credential theft from LSASS, ransomware file patterns — at the kernel level, before code runs. They are the single highest-value anti-malware control and are almost invisible in day-to-day use._
 
-**19 settings** in this category &mdash; **18** are part of the Recommended profile.
+**19 settings** on this page &mdash; **18** are part of the Recommended profile.
 
 ### Advanced Ransomware Protection
 

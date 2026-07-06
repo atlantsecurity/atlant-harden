@@ -4,7 +4,7 @@
 
 _The full DISA Mozilla Firefox STIG, including strict policy lockdowns beyond the exploitation-prevention subset used by the Recommended profile._
 
-**43 settings** in this category &mdash; **2** are part of the Recommended profile.
+**43 settings** on this page &mdash; **2** are part of the Recommended profile.
 
 ### Background submission of information to Mozilla must be disabled.
 

@@ -4,7 +4,7 @@
 
 _Enterprise-policy hardening for Microsoft Edge. The high-value controls prevent exploitation and phishing — site isolation, SmartScreen, TLS enforcement and certificate checks — rather than stripping convenience features._
 
-**12 settings** in this category &mdash; **9** are part of the Recommended profile.
+**12 settings** on this page &mdash; **9** are part of the Recommended profile.
 
 ### Block SSL Error Override
 

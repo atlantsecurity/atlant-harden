@@ -4,7 +4,7 @@
 
 _You cannot investigate what you did not record. These settings turn on the visibility responders need after an incident: PowerShell script-block/module logging and transcription, process-creation auditing with command lines, and a larger security event log._
 
-**12 settings** in this category &mdash; **11** are part of the Recommended profile.
+**12 settings** on this page &mdash; **11** are part of the Recommended profile.
 
 ### Audit Logon Events
 

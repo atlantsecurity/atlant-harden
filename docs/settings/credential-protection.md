@@ -4,7 +4,7 @@
 
 _Stops attackers from stealing the credentials that let them move from one machine to the whole network. These settings protect the LSASS process (where Windows holds credentials in memory), stop weak-hash and cleartext storage, and enforce modern authentication — the controls that defeat Mimikatz-style attacks._
 
-**13 settings** in this category &mdash; **12** are part of the Recommended profile.
+**13 settings** on this page &mdash; **12** are part of the Recommended profile.
 
 ### Account Lockout Duration (15 minutes)
 

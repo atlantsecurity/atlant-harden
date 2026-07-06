@@ -4,7 +4,7 @@
 
 _The full DISA Google Chrome STIG, including strict policy lockdowns beyond the exploitation-prevention subset used by the Recommended profile._
 
-**39 settings** in this category &mdash; **3** are part of the Recommended profile.
+**39 settings** on this page &mdash; **3** are part of the Recommended profile.
 
 ### AI-powered History Search must be disabled.
 

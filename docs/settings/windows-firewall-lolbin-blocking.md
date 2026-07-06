@@ -4,7 +4,7 @@
 
 _Blocks Living-off-the-Land binaries (LOLBins) — trusted Windows tools such as certutil, mshta, wscript and regsvr32 that attackers abuse to download payloads and reach command-and-control — from making outbound network connections._
 
-**10 settings** in this category &mdash; **9** are part of the Recommended profile.
+**10 settings** on this page &mdash; **9** are part of the Recommended profile.
 
 ### Block certutil.exe Network Access
 
