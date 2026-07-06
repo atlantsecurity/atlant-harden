@@ -157,6 +157,41 @@ function WriteIndex([bool]$recOnly, $title, $preamble, $outFile, $pages) {
     Write-Output "Wrote index: $outFile"
 }
 
+# Single-file combined edition for the downloadable zip. GitHub's render size
+# limit does not apply locally, and one searchable file per profile reads better
+# offline than 20+ separate pages. Identical setting rendering, all in one file
+# with an in-page Contents list.
+function WriteCombined([bool]$recOnly, $title, $preamble, $outFile, [bool]$showProfile) {
+    $items = if ($recOnly) { @($data | Where-Object { $_.Rec }) } else { @($data) }
+    $sb = [System.Text.StringBuilder]::new()
+    [void]$sb.AppendLine("# $title")
+    [void]$sb.AppendLine()
+    [void]$sb.AppendLine($preamble)
+    [void]$sb.AppendLine()
+    [void]$sb.AppendLine("## Contents")
+    [void]$sb.AppendLine()
+    foreach ($ck in $cat.Keys) {
+        $n = @($items | Where-Object { $_.Category -eq $ck }).Count
+        if ($n -le 0) { continue }
+        $anchor = ($cat[$ck].t.ToLower() -replace '[^a-z0-9 -]','' -replace ' ','-')
+        [void]$sb.AppendLine("- [$($cat[$ck].t)](#$anchor) &mdash; $n settings")
+    }
+    [void]$sb.AppendLine()
+    foreach ($ck in $cat.Keys) {
+        $grp = @($items | Where-Object { $_.Category -eq $ck } | Sort-Object Name)
+        if ($grp.Count -eq 0) { continue }
+        [void]$sb.AppendLine("## $($cat[$ck].t)")
+        [void]$sb.AppendLine()
+        [void]$sb.AppendLine("_$($cat[$ck].why)_")
+        [void]$sb.AppendLine()
+        [void]$sb.AppendLine("**$($grp.Count) settings in this section.**")
+        [void]$sb.AppendLine()
+        foreach ($s in $grp) { [void]$sb.Append((RenderSetting $s $showProfile)) }
+    }
+    Set-Content -Path $outFile -Value $sb.ToString() -Encoding utf8
+    Write-Output "Wrote combined: $outFile ($(@($items).Count) settings)"
+}
+
 $recPre = @'
 This document explains **every setting applied by the Recommended profile**, one by one — what it changes and why it matters.
 
@@ -175,3 +210,8 @@ $pages = WriteCategoryPages 'C:\P\winh\settings'
 WriteIndex $true  'AtlantHarden — Recommended Settings, Explained' $recPre 'C:\P\winh\Recommended-Settings-Explained.md' $pages
 WriteIndex $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre 'C:\P\winh\Maximum-Settings-Explained.md' $pages
 Write-Output "Wrote $($pages.Count) pages to C:\P\winh\settings"
+
+# Combined single-file editions for the downloadable zip (local reading).
+New-Item -ItemType Directory -Force -Path 'C:\P\winh\zip' | Out-Null
+WriteCombined $true  'AtlantHarden — Recommended Settings, Explained' $recPre 'C:\P\winh\zip\Recommended-Settings-Explained.md' $false
+WriteCombined $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre 'C:\P\winh\zip\Maximum-Settings-Explained.md' $true
