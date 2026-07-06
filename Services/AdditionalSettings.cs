@@ -790,8 +790,20 @@ namespace AtlantHarden.Services
             const string DIGSIG = @"HKCU\Software\Adobe\Acrobat Reader\DC\Security\cDigSig";
 
             static HardeningSetting Adobe(string id, string name, string desc, string vid, string path,
-                string key, object rec, RiskLevel risk = RiskLevel.Low, string? impact = null)
-                => new HardeningSetting
+                string key, object rec, RiskLevel risk = RiskLevel.Low, string? impact = null, bool machineWide = false)
+            {
+                // Always mirror to the "Adobe Acrobat" (unified/Pro) product node.
+                var mirrors = new List<string> { path.Replace(@"\Acrobat Reader\", @"\Adobe Acrobat\") };
+                if (machineWide && path.StartsWith(@"HKCU\", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    // HKCU-only Adobe prefs (FIPS, trust-list downloads) also get seeded as the
+                    // machine-wide HKLM default, so an org deployment covers every user profile,
+                    // not just the account that ran the tool.
+                    var hklm = @"HKLM\" + path.Substring(@"HKCU\".Length);
+                    mirrors.Add(hklm);
+                    mirrors.Add(hklm.Replace(@"\Acrobat Reader\", @"\Adobe Acrobat\"));
+                }
+                return new HardeningSetting
                 {
                     Id = id,
                     Name = name,
@@ -804,10 +816,11 @@ namespace AtlantHarden.Services
                     RegistryValueType = "REG_DWORD",
                     RecommendedValue = rec,
                     DefaultValue = null,   // revert removes the policy value (returns to "not configured")
-                    MirrorRegistryPaths = new[] { path.Replace(@"\Acrobat Reader\", @"\Adobe Acrobat\") },
+                    MirrorRegistryPaths = mirrors.ToArray(),
                     ImpactWarning = impact,
                     Tags = new[] { "adobe", "pdf", "stig" }
                 };
+            }
 
             return new List<HardeningSetting>
             {
@@ -837,9 +850,9 @@ namespace AtlantHarden.Services
                 Adobe("ADOBE_DisableWelcomeScreen", "Disable Welcome Screen", "Hide the Adobe welcome / onboarding screen", "V-213186", FLD + @"\cWelcomeScreen", "bShowWelcomeScreen", 0),
                 Adobe("ADOBE_DisableUpdater", "Disable Adobe Updater", "Disable the in-app updater (org-managed patching)", "V-213187", SVC, "bUpdater", 0, RiskLevel.Low, "Disables Acrobat/Reader's own updater -- only use if you patch it centrally, or it will go unpatched."),
                 Adobe("ADOBE_DisableMaintenance", "Disable Installer Repair/Modify", "Prevent repair/modify of the installation (anti-tamper)", "V-213180", @"HKLM\Software\Adobe\Acrobat Reader\DC\Installer", "DisableMaintenance", 1),
-                Adobe("ADOBE_DisableEUTLDownload", "Disable EUTL Trust List Download", "Stop auto-download of the European Union Trusted List", "V-213190", DIGSIG + @"\cEUTLDownload", "bLoadSettingsFromURL", 0),
-                Adobe("ADOBE_DisableAdobeTrustDownload", "Disable Adobe Trust List Download", "Stop auto-download of the Adobe Approved Trust List", "V-213191", DIGSIG + @"\cAdobeDownload", "bLoadSettingsFromURL", 0),
-                Adobe("ADOBE_FIPSMode", "Enable FIPS Mode", "Force FIPS 140 cryptography in Acrobat/Reader", "V-213193", @"HKCU\Software\Adobe\Acrobat Reader\DC\AVGeneral", "bFIPSMode", 1, RiskLevel.Medium, "FIPS mode restricts cryptography and can break some signing workflows.")
+                Adobe("ADOBE_DisableEUTLDownload", "Disable EUTL Trust List Download", "Stop auto-download of the European Union Trusted List", "V-213190", DIGSIG + @"\cEUTLDownload", "bLoadSettingsFromURL", 0, machineWide: true),
+                Adobe("ADOBE_DisableAdobeTrustDownload", "Disable Adobe Trust List Download", "Stop auto-download of the Adobe Approved Trust List", "V-213191", DIGSIG + @"\cAdobeDownload", "bLoadSettingsFromURL", 0, machineWide: true),
+                Adobe("ADOBE_FIPSMode", "Enable FIPS Mode", "Force FIPS 140 cryptography in Acrobat/Reader", "V-213193", @"HKCU\Software\Adobe\Acrobat Reader\DC\AVGeneral", "bFIPSMode", 1, RiskLevel.Medium, "FIPS mode restricts cryptography and can break some signing workflows.", machineWide: true)
             };
         }
 
