@@ -81,8 +81,12 @@ namespace AtlantHarden.Services
                 if (setting.Type == SettingType.Registry && setting.DefaultValue != null)
                 {
                     var valueKind = RegistryService.ParseValueKind(setting.RegistryValueType);
-                    return RegistryService.WriteValue(setting.RegistryPath, setting.RegistryKey,
+                    var ok = RegistryService.WriteValue(setting.RegistryPath, setting.RegistryKey,
                         setting.DefaultValue, valueKind);
+                    if (setting.MirrorRegistryPaths != null)
+                        foreach (var path in setting.MirrorRegistryPaths)
+                            RegistryService.WriteValue(path, setting.RegistryKey, setting.DefaultValue, valueKind);
+                    return ok;
                 }
 
                 // ...otherwise (e.g. DISA STIG policy values) remove the value so the policy
@@ -90,7 +94,11 @@ namespace AtlantHarden.Services
                 if (setting.Type == SettingType.Registry && setting.DefaultValue == null
                     && !string.IsNullOrEmpty(setting.RegistryPath) && !string.IsNullOrEmpty(setting.RegistryKey))
                 {
-                    return RegistryService.DeleteValue(setting.RegistryPath, setting.RegistryKey);
+                    var ok = RegistryService.DeleteValue(setting.RegistryPath, setting.RegistryKey);
+                    if (setting.MirrorRegistryPaths != null)
+                        foreach (var path in setting.MirrorRegistryPaths)
+                            RegistryService.DeleteValue(path, setting.RegistryKey);
+                    return ok;
                 }
 
                 // For other settings, require a RevertCommand
@@ -437,8 +445,17 @@ namespace AtlantHarden.Services
                 return false;
 
             var valueKind = RegistryService.ParseValueKind(setting.RegistryValueType);
-            return RegistryService.WriteValue(setting.RegistryPath, setting.RegistryKey, 
+            var ok = RegistryService.WriteValue(setting.RegistryPath, setting.RegistryKey,
                 setting.RecommendedValue, valueKind);
+
+            // Mirror the same value to alternate product locations (e.g. Adobe "Acrobat Reader"
+            // vs the "Adobe Acrobat" unified node). Best-effort; primary write decides success.
+            if (setting.MirrorRegistryPaths != null)
+            {
+                foreach (var path in setting.MirrorRegistryPaths)
+                    RegistryService.WriteValue(path, setting.RegistryKey, setting.RecommendedValue, valueKind);
+            }
+            return ok;
         }
 
         private async Task<bool> RunPowerShellAsync(string command)

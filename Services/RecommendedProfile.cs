@@ -75,6 +75,17 @@ namespace AtlantHarden.Services
             SettingCategory.StigEdge, SettingCategory.StigChrome, SettingCategory.StigFirefox
         };
 
+        // Adobe Acrobat/Reader: the PDF exploitation / malware-execution mitigations belong in
+        // Recommended. The cloud/service/feature toggles (Document Cloud, Sign, webmail, SharePoint,
+        // prefs sync, welcome screen, disable-updater, FIPS, digital-signature URL fetch) are
+        // Maximum-only — same treatment as browser feature-removal. Allow-list of Recommended keys:
+        private static readonly HashSet<string> AdobeSecurityKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "bProtectedMode", "iProtectedView", "bEnhancedSecurityStandalone", "bEnhancedSecurityInBrowser",
+            "bDisableJavaScript", "iFileAttachmentPerms", "bEnableFlash", "iURLPerms", "iUnknownURLPerms",
+            "bDisablePDFHandlerSwitching", "bDisableTrustedFolders", "bDisableTrustedSites", "bAcroSuppressUpsell"
+        };
+
         // Script/scrap file types that are pure malware-delivery vectors and are never
         // double-clicked legitimately. (.bat/.cmd/.ps1/.reg/.iso/.url are intentionally left
         // runnable — power users invoke those directly.)
@@ -224,6 +235,11 @@ namespace AtlantHarden.Services
                 case SettingCategory.StigChrome:
                 case SettingCategory.StigFirefox:
                     return BrowserSecurityKeys.Contains(s.RegistryKey ?? string.Empty);
+
+                // Adobe: only the PDF exploitation/malware mitigations (allow-list); the
+                // cloud/service/feature toggles and FIPS are Maximum-only.
+                case SettingCategory.AdobeReader:
+                    return AdobeSecurityKeys.Contains(s.RegistryKey ?? string.Empty);
 
                 // Everything else (OS, credential, network, Office, logging, crypto, autorun):
                 // mostly include — they are genuine attack-prevention — minus the friction list.

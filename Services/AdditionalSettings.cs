@@ -781,99 +781,65 @@ namespace AtlantHarden.Services
 
         public static List<HardeningSetting> GetAdobeSettings()
         {
+            // DISA "Adobe Acrobat Reader DC Continuous Track" STIG V2R1 hardening. Every value is
+            // written to BOTH product nodes -- the free "Acrobat Reader" AND "Adobe Acrobat" (used by
+            // Acrobat Pro/Standard and the new unified 64-bit app) -- via MirrorRegistryPaths, so
+            // whichever product is installed gets hardened. FeatureLockDown = admin-enforced lockdown.
+            const string FLD = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown";
+            const string SVC = FLD + @"\cServices";
+            const string DIGSIG = @"HKCU\Software\Adobe\Acrobat Reader\DC\Security\cDigSig";
+
+            static HardeningSetting Adobe(string id, string name, string desc, string vid, string path,
+                string key, object rec, RiskLevel risk = RiskLevel.Low, string? impact = null)
+                => new HardeningSetting
+                {
+                    Id = id,
+                    Name = name,
+                    Description = string.IsNullOrEmpty(vid) ? desc : $"{desc} (STIG {vid})",
+                    Category = SettingCategory.AdobeReader,
+                    Type = SettingType.Registry,
+                    Risk = risk,
+                    RegistryPath = path,
+                    RegistryKey = key,
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = rec,
+                    DefaultValue = null,   // revert removes the policy value (returns to "not configured")
+                    MirrorRegistryPaths = new[] { path.Replace(@"\Acrobat Reader\", @"\Adobe Acrobat\") },
+                    ImpactWarning = impact,
+                    Tags = new[] { "adobe", "pdf", "stig" }
+                };
+
             return new List<HardeningSetting>
             {
-                new HardeningSetting
-                {
-                    Id = "ADOBE_ProtectedMode",
-                    Name = "Enable Protected Mode",
-                    Description = "Enable Adobe Reader Protected Mode sandbox",
-                    Category = SettingCategory.AdobeReader,
-                    Type = SettingType.Registry,
-                    Risk = RiskLevel.Low,
-                    RegistryPath = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown",
-                    RegistryKey = "bProtectedMode",
-                    RegistryValueType = "REG_DWORD",
-                    RecommendedValue = 1,
-                    DefaultValue = 0,
-                    Tags = new[] { "adobe", "sandbox", "protected" }
-                },
-                new HardeningSetting
-                {
-                    Id = "ADOBE_ProtectedView",
-                    Name = "Enable Protected View",
-                    Description = "Enable Protected View for all files",
-                    Category = SettingCategory.AdobeReader,
-                    Type = SettingType.Registry,
-                    Risk = RiskLevel.Low,
-                    RegistryPath = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown",
-                    RegistryKey = "iProtectedView",
-                    RegistryValueType = "REG_DWORD",
-                    RecommendedValue = 2,
-                    DefaultValue = 0,
-                    Tags = new[] { "adobe", "protected", "view" }
-                },
-                new HardeningSetting
-                {
-                    Id = "ADOBE_EnhancedSecurity",
-                    Name = "Enable Enhanced Security",
-                    Description = "Enable enhanced security in standalone mode",
-                    Category = SettingCategory.AdobeReader,
-                    Type = SettingType.Registry,
-                    Risk = RiskLevel.Low,
-                    RegistryPath = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown",
-                    RegistryKey = "bEnhancedSecurityStandalone",
-                    RegistryValueType = "REG_DWORD",
-                    RecommendedValue = 1,
-                    DefaultValue = 0,
-                    Tags = new[] { "adobe", "standalone", "security" }
-                },
-                new HardeningSetting
-                {
-                    Id = "ADOBE_DisableJavaScript",
-                    Name = "Disable JavaScript",
-                    Description = "Disable JavaScript execution in PDFs",
-                    Category = SettingCategory.AdobeReader,
-                    Type = SettingType.Registry,
-                    Risk = RiskLevel.Medium,
-                    RegistryPath = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown",
-                    RegistryKey = "bDisableJavaScript",
-                    RegistryValueType = "REG_DWORD",
-                    RecommendedValue = 1,
-                    DefaultValue = 0,
-                    ImpactWarning = "Some PDF forms may not work",
-                    Tags = new[] { "adobe", "javascript" }
-                },
-                new HardeningSetting
-                {
-                    Id = "ADOBE_DisableAttachments",
-                    Name = "Disable File Attachments",
-                    Description = "Prevent opening of file attachments",
-                    Category = SettingCategory.AdobeReader,
-                    Type = SettingType.Registry,
-                    Risk = RiskLevel.Low,
-                    RegistryPath = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown",
-                    RegistryKey = "iFileAttachmentPerms",
-                    RegistryValueType = "REG_DWORD",
-                    RecommendedValue = 1,
-                    DefaultValue = 0,
-                    Tags = new[] { "adobe", "attachments" }
-                },
-                new HardeningSetting
-                {
-                    Id = "ADOBE_SuppressUpsell",
-                    Name = "Suppress Upsell Messages",
-                    Description = "Suppress Adobe upsell and advertising",
-                    Category = SettingCategory.AdobeReader,
-                    Type = SettingType.Registry,
-                    Risk = RiskLevel.Low,
-                    RegistryPath = @"HKLM\Software\Policies\Adobe\Acrobat Reader\DC\FeatureLockDown",
-                    RegistryKey = "bAcroSuppressUpsell",
-                    RegistryValueType = "REG_DWORD",
-                    RecommendedValue = 1,
-                    DefaultValue = 0,
-                    Tags = new[] { "adobe", "upsell", "advertising" }
-                }
+                // --- Recommended: PDF exploitation / malware-execution mitigations ---
+                Adobe("ADOBE_ProtectedMode", "Enable Protected Mode", "Run Adobe in the Protected Mode sandbox", "V-213170", FLD, "bProtectedMode", 1),
+                Adobe("ADOBE_ProtectedView", "Enable Protected View", "Open every PDF in Protected View", "V-213171", FLD, "iProtectedView", 2),
+                Adobe("ADOBE_EnhancedSecurity", "Enable Enhanced Security (Standalone)", "Enforce Enhanced Security outside the browser", "V-213168", FLD, "bEnhancedSecurityStandalone", 1),
+                Adobe("ADOBE_EnhancedSecurityBrowser", "Enable Enhanced Security (Browser)", "Enforce Enhanced Security in the browser plug-in", "V-213169", FLD, "bEnhancedSecurityInBrowser", 1),
+                Adobe("ADOBE_DisableJavaScript", "Disable JavaScript", "Disable JavaScript execution in PDFs", "", FLD, "bDisableJavaScript", 1, RiskLevel.Medium, "Some interactive PDF forms may not work"),
+                Adobe("ADOBE_DisableAttachments", "Block File Attachments", "Prevent opening or launching PDF file attachments", "V-213174", FLD, "iFileAttachmentPerms", 1),
+                Adobe("ADOBE_DisableFlash", "Disable Flash in PDFs", "Disable the legacy Flash player inside PDFs", "V-213175", FLD, "bEnableFlash", 0),
+                Adobe("ADOBE_RestrictURL", "Restrict URL Access from PDFs", "Restrict PDFs from silently accessing URLs", "V-213172", FLD + @"\cDefaultLaunchURLPerms", "iURLPerms", 1),
+                Adobe("ADOBE_BlockUnknownURL", "Block Unknown URL Access", "Block PDFs from opening unknown/untrusted URLs", "V-213173", FLD + @"\cDefaultLaunchURLPerms", "iUnknownURLPerms", 3),
+                Adobe("ADOBE_LockPDFHandler", "Lock Default PDF Handler", "Prevent switching the default PDF handler", "V-213176", FLD, "bDisablePDFHandlerSwitching", 1),
+                Adobe("ADOBE_DisableTrustedFolders", "Disable Trusted Folders", "Disable privileged locations (trusted files/folders)", "V-213188", FLD, "bDisableTrustedFolders", 1),
+                Adobe("ADOBE_DisableTrustedSites", "Disable Trusted Sites", "Disable privileged locations (trusted sites)", "V-213189", FLD, "bDisableTrustedSites", 1),
+                Adobe("ADOBE_SuppressUpsell", "Suppress Upsell Messages", "Suppress Adobe upsell and advertising", "V-213182", FLD, "bAcroSuppressUpsell", 1),
+
+                // --- Maximum-only: cloud/service/feature toggles and high-friction lockdowns ---
+                Adobe("ADOBE_DisableCloudSend", "Disable Adobe Cloud (Send)", "Disable the Adobe cloud 'Send' plug-in", "V-213177", FLD + @"\cCloud", "bAdobeSendPluginToggle", 1),
+                Adobe("ADOBE_DisableDocServices", "Disable Adobe Document Cloud", "Disable Adobe Document Cloud services", "V-213178", SVC, "bToggleAdobeDocumentServices", 1),
+                Adobe("ADOBE_DisablePrefsSync", "Disable Preference Sync", "Disable syncing preferences to the Adobe cloud", "V-213179", SVC, "bTogglePrefsSync", 1),
+                Adobe("ADOBE_DisableWebConnectors", "Disable Third-Party Web Connectors", "Disable third-party cloud/web connectors", "V-213181", SVC, "bToggleWebConnectors", 1),
+                Adobe("ADOBE_DisableAdobeSign", "Disable Adobe Sign", "Disable the Adobe Sign integration", "V-213183", SVC, "bToggleAdobeSign", 1),
+                Adobe("ADOBE_DisableWebmail", "Disable Webmail", "Disable sending PDFs via webmail", "V-213184", FLD + @"\cWebmailProfiles", "bDisableWebmail", 1),
+                Adobe("ADOBE_DisableSharePoint", "Disable SharePoint Integration", "Disable SharePoint / Office 365 connections", "V-213185", FLD + @"\cSharePoint", "bDisableSharePointFeatures", 1),
+                Adobe("ADOBE_DisableWelcomeScreen", "Disable Welcome Screen", "Hide the Adobe welcome / onboarding screen", "V-213186", FLD + @"\cWelcomeScreen", "bShowWelcomeScreen", 0),
+                Adobe("ADOBE_DisableUpdater", "Disable Adobe Updater", "Disable the in-app updater (org-managed patching)", "V-213187", SVC, "bUpdater", 0, RiskLevel.Low, "Disables Acrobat/Reader's own updater -- only use if you patch it centrally, or it will go unpatched."),
+                Adobe("ADOBE_DisableMaintenance", "Disable Installer Repair/Modify", "Prevent repair/modify of the installation (anti-tamper)", "V-213180", @"HKLM\Software\Adobe\Acrobat Reader\DC\Installer", "DisableMaintenance", 1),
+                Adobe("ADOBE_DisableEUTLDownload", "Disable EUTL Trust List Download", "Stop auto-download of the European Union Trusted List", "V-213190", DIGSIG + @"\cEUTLDownload", "bLoadSettingsFromURL", 0),
+                Adobe("ADOBE_DisableAdobeTrustDownload", "Disable Adobe Trust List Download", "Stop auto-download of the Adobe Approved Trust List", "V-213191", DIGSIG + @"\cAdobeDownload", "bLoadSettingsFromURL", 0),
+                Adobe("ADOBE_FIPSMode", "Enable FIPS Mode", "Force FIPS 140 cryptography in Acrobat/Reader", "V-213193", @"HKCU\Software\Adobe\Acrobat Reader\DC\AVGeneral", "bFIPSMode", 1, RiskLevel.Medium, "FIPS mode restricts cryptography and can break some signing workflows.")
             };
         }
 

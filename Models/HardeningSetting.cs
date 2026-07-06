@@ -70,6 +70,14 @@ namespace AtlantHarden.Models
         public string RegistryValueType { get; set; } = string.Empty;
         public object? RecommendedValue { get; set; }
         public object? DefaultValue { get; set; }
+
+        /// <summary>
+        /// Extra registry paths to write/revert the same key+value to, beyond the primary
+        /// <see cref="RegistryPath"/>. Used when one logical control must land in more than one
+        /// location — e.g. Adobe hardening under both the "Acrobat Reader" and "Adobe Acrobat"
+        /// (unified 64-bit) product nodes, so whichever product is installed is hardened.
+        /// </summary>
+        public string[]? MirrorRegistryPaths { get; set; }
         
         // For PowerShell/Command settings
         public string ApplyCommand { get; set; } = string.Empty;
