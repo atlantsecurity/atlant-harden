@@ -2,7 +2,7 @@
 
 ![Atlant Security Logo](Resources/logo.png)
 
-AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **579 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — through one-click, review-before-apply profiles with full backup and restore. The released build is a single **self-contained executable** (no .NET runtime to install).
+AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **599 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — through one-click, review-before-apply profiles with full backup and restore. The released build is a single **self-contained executable** (no .NET runtime to install).
 
 ## ⬇️ Download
 
@@ -79,8 +79,8 @@ DISA releases and loaded from an auditable, regenerable catalog (`Resources/stig
 ### 🎚️ One-Click Profiles (review before you apply)
 Three curated profiles, each with **Apply** and a **Show settings** button that opens a scrollable review of every setting (name, description, registry change, current vs. recommended value) before anything is applied:
 - **Basic** (95 settings) - the highest-impact, effectively zero-friction core
-- **Recommended** (318 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
-- **Maximum** (579 settings) - everything, including the strict DISA STIG lockdowns
+- **Recommended** (325 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
+- **Maximum** (599 settings) - everything, including the strict DISA STIG lockdowns
 
 **Self-protection:** before enabling any setting, AtlantHarden allow-lists its own executable for Microsoft Defender ASR and Controlled Folder Access, and keeps Explorer SmartScreen at an overridable level — so this (unsigned) tool can always be relaunched to revert.
 

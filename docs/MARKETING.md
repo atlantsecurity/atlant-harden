@@ -2,7 +2,7 @@
 
 ### Free Windows 11, Browser & Office Hardening Tool
 
-**One click. 579 security settings. 354 DISA STIG controls. And — finally — hardening that doesn't break your machine.**
+**One click. 599 security settings. 354 DISA STIG controls. And — finally — hardening that doesn't break your machine.**
 
 Free to use · No account · No telemetry · Self-contained download (no .NET install required)
 
@@ -28,7 +28,7 @@ Here's the part nobody talks about. Blindly applying a DISA STIG or CIS benchmar
 
 | | |
 |---|---|
-| **579 hardening settings** | Registry, PowerShell, firewall, file associations, audit policy, ASR rules |
+| **599 hardening settings** | Registry, PowerShell, firewall, file associations, audit policy, ASR rules |
 | **354 DISA STIG controls** | Windows 11, Edge, Chrome, Firefox & Office 365 — the *latest* releases, each tagged with its STIG ID, Vulnerability ID, and CCIs |
 | **34 ACSC Essential Eight** | Aligned to the Australian Cyber Security Centre's Windows guidance |
 | **3 one-click profiles** | Basic, Recommended, Maximum — review every setting before you apply |
@@ -45,7 +45,7 @@ Every profile has an **Apply** button *and* a **Show settings** button — so yo
 ### 🛡️ Basic — *95 settings*
 The highest-impact, effectively zero-friction core: Attack Surface Reduction, Microsoft Defender, SmartScreen, macro and script blocking, credential-theft protection, UAC, and security logging. If you do nothing else, do this.
 
-### ⚡ Recommended — *318 settings* · **the smart default**
+### ⚡ Recommended — *325 settings* · **the smart default**
 The profile most people will click — and the reason AtlantHarden exists. It applies the controls that stop real malware and exploitation:
 
 - **Anti-malware execution** — 18 Attack Surface Reduction rules + Microsoft Defender cloud, network & PUA protection
@@ -57,7 +57,7 @@ The profile most people will click — and the reason AtlantHarden exists. It ap
 
 …and it **deliberately leaves out** the things that cripple a real machine: it does **not** disable your password manager, InPrivate/Incognito, or history deletion; it does **not** turn on Controlled Folder Access, FIPS, Constrained Language Mode, or a BitLocker pre-boot PIN. It's already **gaming- and performance-safe** — no Virtualization-Based Security, no anti-cheat conflicts.
 
-### 🔒 Maximum — *579 settings*
+### 🔒 Maximum — *599 settings*
 Everything, including the strict DISA STIG lockdowns. Full compliance for high-security and audited environments that understand — and want — the friction.
 
 ---

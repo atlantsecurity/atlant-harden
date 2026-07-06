@@ -24,7 +24,7 @@ The full set is documented **one page per category** — click a page for its co
 | [Microsoft Edge Hardening](settings/microsoft-edge-hardening.md) | 9 |
 | [Google Chrome Hardening](settings/google-chrome-hardening.md) | 9 |
 | [Mozilla Firefox Hardening](settings/mozilla-firefox-hardening.md) | 3 |
-| [Adobe Acrobat / Reader](settings/adobe-acrobat-reader.md) | 6 |
+| [Adobe Acrobat / Reader](settings/adobe-acrobat-reader.md) | 13 |
 | [DISA STIG — Microsoft Windows 11 (V2R7) &mdash; Part 1 of 2](settings/disa-stig-microsoft-windows-11-v2r7-part-1.md) | 34 |
 | [DISA STIG — Microsoft Windows 11 (V2R7) &mdash; Part 2 of 2](settings/disa-stig-microsoft-windows-11-v2r7-part-2.md) | 34 |
 | [DISA STIG — Microsoft Edge (V2R5)](settings/disa-stig-microsoft-edge-v2r5.md) | 7 |
@@ -33,5 +33,5 @@ The full set is documented **one page per category** — click a page for its co
 | [DISA STIG — Microsoft Office 365 ProPlus (V3R5) &mdash; Part 1 of 2](settings/disa-stig-microsoft-office-365-proplus-v3r5-part-1.md) | 33 |
 | [DISA STIG — Microsoft Office 365 ProPlus (V3R5) &mdash; Part 2 of 2](settings/disa-stig-microsoft-office-365-proplus-v3r5-part-2.md) | 44 |
 
-**Total: 318 settings.**
+**Total: 325 settings.**
 
