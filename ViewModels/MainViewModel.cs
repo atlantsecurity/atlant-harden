@@ -995,13 +995,13 @@ namespace AtlantHarden.ViewModels
                         else
                         {
                             failCount++;
-                            errors.Add($"❌ Enable {setting.Name}: Failed (check admin permissions)");
+                            errors.Add($"❌ {setting.Name}: Failed to apply");
                         }
                     }
                     catch (Exception ex)
                     {
                         failCount++;
-                        errors.Add($"❌ Enable {setting.Name}: {ex.Message}");
+                        errors.Add($"❌ {setting.Name}: {ex.Message}");
                     }
 
                     ProgressValue++;
@@ -1024,13 +1024,13 @@ namespace AtlantHarden.ViewModels
                         else
                         {
                             failCount++;
-                            errors.Add($"❌ Disable {setting.Name}: Failed (check admin permissions)");
+                            errors.Add($"❌ {setting.Name}: Failed to revert");
                         }
                     }
                     catch (Exception ex)
                     {
                         failCount++;
-                        errors.Add($"❌ Disable {setting.Name}: {ex.Message}");
+                        errors.Add($"❌ {setting.Name}: {ex.Message}");
                     }
 
                     ProgressValue++;

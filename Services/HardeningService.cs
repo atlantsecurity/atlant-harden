@@ -372,11 +372,12 @@ namespace AtlantHarden.Services
             if (current == null && recommended == null) return true;
             if (current == null || recommended == null) return false;
 
-            // Handle multi-string (REG_MULTI_SZ) values: compare element sequences, not ToString()
+            // Handle multi-string (REG_MULTI_SZ) values: compare element sequences, not ToString().
+            // Recommended values may be authored as a single '\0'/';'-separated string, so normalize.
             if (current is string[] || recommended is string[])
             {
-                var cur = current as string[] ?? new[] { current.ToString() ?? string.Empty };
-                var rec = recommended as string[] ?? new[] { recommended.ToString() ?? string.Empty };
+                var cur = RegistryService.ToMultiString(current);
+                var rec = RegistryService.ToMultiString(recommended);
                 return cur.SequenceEqual(rec, StringComparer.OrdinalIgnoreCase);
             }
 
@@ -387,7 +388,12 @@ namespace AtlantHarden.Services
                 {
                     var currentNum = Convert.ToInt64(current);
                     var recommendedNum = Convert.ToInt64(recommended);
-                    return currentNum == recommendedNum;
+                    if (currentNum == recommendedNum) return true;
+                    // A DWORD authored as 0xFFFFFFFF (uint) is stored as, and reads back as, int -1.
+                    // Treat DWORD-range values that match in their low 32 bits as equal.
+                    bool bothDword = currentNum >= int.MinValue && currentNum <= uint.MaxValue
+                                  && recommendedNum >= int.MinValue && recommendedNum <= uint.MaxValue;
+                    return bothDword && unchecked((uint)currentNum) == unchecked((uint)recommendedNum);
                 }
                 catch
                 {

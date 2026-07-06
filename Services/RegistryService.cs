@@ -26,7 +26,7 @@ namespace AtlantHarden.Services
             {
                 var (rootKey, subPath) = ParseRegistryPath(path);
                 using var key = rootKey.CreateSubKey(subPath, true);
-                key?.SetValue(keyName, value, valueKind);
+                key?.SetValue(keyName, CoerceValue(value, valueKind), valueKind);
                 return true;
             }
             catch
@@ -34,6 +34,25 @@ namespace AtlantHarden.Services
                 return false;
             }
         }
+
+        // Coerce a setting's value object to the CLR type the registry API expects for the kind.
+        // Fixes two silent failures: DWORDs authored as uint (e.g. 0xFFFFFFFF overflows Int32 in
+        // SetValue) and REG_MULTI_SZ values authored as a single '\0'/';'-separated string.
+        private static object CoerceValue(object value, RegistryValueKind valueKind) => valueKind switch
+        {
+            RegistryValueKind.DWord => unchecked((int)Convert.ToInt64(value)),
+            RegistryValueKind.QWord => Convert.ToInt64(value),
+            RegistryValueKind.MultiString => ToMultiString(value),
+            RegistryValueKind.String or RegistryValueKind.ExpandString => value?.ToString() ?? string.Empty,
+            _ => value
+        };
+
+        // A REG_MULTI_SZ value may be authored as a string[] or as a single string with '\0'
+        // (or ';') separators. Normalize to the string[] the registry API requires.
+        public static string[] ToMultiString(object? value) =>
+            value is string[] arr
+                ? arr
+                : (value?.ToString() ?? string.Empty).Split(new[] { '\0', ';' }, StringSplitOptions.RemoveEmptyEntries);
 
         public static bool DeleteValue(string path, string keyName)
         {
