@@ -446,8 +446,10 @@
                                 </Border>
                                 <TextBlock Text="Basic" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
                                 <TextBlock Text="Highest-ROI core, zero friction" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding BasicProfileCount, StringFormat='{}{0} settings'}" 
-                                           FontSize="11" Foreground="#238636" Margin="0,0,0,10"/>
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding BasicProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="#238636"/>
+                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding BasicAppliedCount, Mode=OneWay}" Foreground="#3FB950" FontWeight="SemiBold"/><Run Text=" of " Foreground="#8B949E"/><Run Text="{Binding BasicProfileCount, Mode=OneWay}" Foreground="#8B949E"/><Run Text=" already applied  ·  " Foreground="#8B949E"/><Run Text="{Binding BasicRemainingCount, Mode=OneWay}" Foreground="#D29922" FontWeight="SemiBold"/><Run Text=" to go" Foreground="#8B949E"/></TextBlock>
+                                </StackPanel>
                                 <Button Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
                                         Command="{Binding ApplyBasicProfileCommand}"
                                         HorizontalAlignment="Stretch" Padding="0,8"/>
@@ -471,8 +473,10 @@
                                     </Border>
                                 </StackPanel>
                                 <TextBlock Text="Stops real malware &amp; exploits — no crippling" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding RecommendedProfileCount, StringFormat='{}{0} settings'}"
-                                           FontSize="11" Foreground="#58A6FF" Margin="0,0,0,10"/>
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding RecommendedProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="#58A6FF"/>
+                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding RecommendedAppliedCount, Mode=OneWay}" Foreground="#3FB950" FontWeight="SemiBold"/><Run Text=" of " Foreground="#8B949E"/><Run Text="{Binding RecommendedProfileCount, Mode=OneWay}" Foreground="#8B949E"/><Run Text=" already applied  ·  " Foreground="#8B949E"/><Run Text="{Binding RecommendedRemainingCount, Mode=OneWay}" Foreground="#D29922" FontWeight="SemiBold"/><Run Text=" to go" Foreground="#8B949E"/></TextBlock>
+                                </StackPanel>
                                 <Button Style="{StaticResource SuccessButtonStyle}" Content="Apply"
                                         Command="{Binding ApplyRecommendedCommand}"
                                         HorizontalAlignment="Stretch" Padding="0,8"/>
@@ -490,8 +494,10 @@
                                 </Border>
                                 <TextBlock Text="Maximum" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
                                 <TextBlock Text="Everything, incl. STIG lockdowns (friction)" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
-                                <TextBlock Text="{Binding MaximumProfileCount, StringFormat='{}{0} settings'}" 
-                                           FontSize="11" Foreground="#D29922" Margin="0,0,0,10"/>
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding MaximumProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="#D29922"/>
+                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding MaximumAppliedCount, Mode=OneWay}" Foreground="#3FB950" FontWeight="SemiBold"/><Run Text=" of " Foreground="#8B949E"/><Run Text="{Binding MaximumProfileCount, Mode=OneWay}" Foreground="#8B949E"/><Run Text=" already applied  ·  " Foreground="#8B949E"/><Run Text="{Binding MaximumRemainingCount, Mode=OneWay}" Foreground="#D29922" FontWeight="SemiBold"/><Run Text=" to go" Foreground="#8B949E"/></TextBlock>
+                                </StackPanel>
                                 <Button Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
                                         Command="{Binding ApplyMaximumProfileCommand}"
                                         HorizontalAlignment="Stretch" Padding="0,8"/>

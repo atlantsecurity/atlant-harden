@@ -286,6 +286,14 @@ namespace AtlantHarden.ViewModels
         public int RecommendedProfileCount => GetRecommendedProfileSettings().Count;
         public int MaximumProfileCount => _hardeningService.GetAllSettings().Count;
 
+        // How much of each profile is already in place (applied) vs. still missing.
+        public int BasicAppliedCount => GetBasicProfileSettings().Count(s => s.IsApplied);
+        public int BasicRemainingCount => BasicProfileCount - BasicAppliedCount;
+        public int RecommendedAppliedCount => GetRecommendedProfileSettings().Count(s => s.IsApplied);
+        public int RecommendedRemainingCount => RecommendedProfileCount - RecommendedAppliedCount;
+        public int MaximumAppliedCount => AppliedSettingsCount;
+        public int MaximumRemainingCount => MaximumProfileCount - MaximumAppliedCount;
+
         // Imported Settings Properties
         public bool HasImportedSettings
         {
@@ -677,6 +685,19 @@ namespace AtlantHarden.ViewModels
             OnPropertyChanged(nameof(AppliedACSCCount));
             OnPropertyChanged(nameof(ACSCComplianceScore));
             OnPropertyChanged(nameof(ACSCComplianceLevel));
+
+            NotifyProfileAppliedCounts();
+        }
+
+        // Refresh the "X of Y already applied" figures on the dashboard profile cards.
+        private void NotifyProfileAppliedCounts()
+        {
+            OnPropertyChanged(nameof(BasicAppliedCount));
+            OnPropertyChanged(nameof(BasicRemainingCount));
+            OnPropertyChanged(nameof(RecommendedAppliedCount));
+            OnPropertyChanged(nameof(RecommendedRemainingCount));
+            OnPropertyChanged(nameof(MaximumAppliedCount));
+            OnPropertyChanged(nameof(MaximumRemainingCount));
         }
 
         private void UpdateDashboardProperties()
@@ -1473,6 +1494,7 @@ namespace AtlantHarden.ViewModels
             OnPropertyChanged(nameof(SecurityScore));
             OnPropertyChanged(nameof(SecurityLevel));
             OnPropertyChanged(nameof(AppliedSettingsCount));
+            NotifyProfileAppliedCounts();
         }
 
         /// <summary>
