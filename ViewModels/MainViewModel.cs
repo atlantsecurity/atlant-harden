@@ -395,6 +395,7 @@ namespace AtlantHarden.ViewModels
         public ICommand ShowAllSettingsCommand { get; private set; } = null!;
         public ICommand ShowRecommendedCommand { get; private set; } = null!;
         public ICommand ShowProfileCommand { get; private set; } = null!;
+        public ICommand ShowComplianceCommand { get; private set; } = null!;
         public ICommand CreateRestorePointCommand { get; private set; } = null!;
         public ICommand OpenAtlantSecurityCommand { get; private set; } = null!;
         public ICommand OpenLicenseContactCommand { get; private set; } = null!;
@@ -428,6 +429,7 @@ namespace AtlantHarden.ViewModels
             ShowAllSettingsCommand = new RelayCommand(ShowAllSettings);
             ShowRecommendedCommand = new RelayCommand(() => ShowProfileSettings("Recommended"));
             ShowProfileCommand = new RelayCommand(p => ShowProfileSettings(p as string));
+            ShowComplianceCommand = new RelayCommand(p => ShowCompliance(p as string));
             CreateRestorePointCommand = new AsyncRelayCommand(CreateRestorePointAsync, () => !IsProcessing);
             OpenAtlantSecurityCommand = new RelayCommand(OpenAtlantSecurityWebsite);
             OpenLicenseContactCommand = new RelayCommand(OpenLicenseContact);
@@ -746,6 +748,27 @@ namespace AtlantHarden.ViewModels
         }
 
         /// <summary>
+        /// Dashboard shortcut: open the Settings screen filtered to a compliance framework —
+        /// "Stig" (all DISA STIG requirements) or "Acsc" (the ACSC Essential Eight) — since
+        /// neither has its own sidebar category.
+        /// </summary>
+        private void ShowCompliance(string? which)
+        {
+            ShowAllSettings();                              // all-settings mode + Settings view
+            SearchText = string.Empty;
+            _selectedRiskFilter = 0;                        // force the next assignment to register as a change
+            SelectedRiskFilter = which == "Acsc" ? 5 : 4;   // 5 = ACSC, 4 = DISA STIG → triggers FilterSettings
+        }
+
+        // Ordering for every review list: surface what still needs doing — settings that are
+        // NOT yet applied first, then by descending criticality (High → Medium → Low), then name.
+        // Callers must refresh IsApplied (CheckCurrentStatus) before calling this.
+        private static IEnumerable<HardeningSetting> SortForReview(IEnumerable<HardeningSetting> settings) =>
+            settings.OrderBy(s => s.IsApplied)
+                    .ThenByDescending(s => (int)s.Risk)
+                    .ThenBy(s => s.Name);
+
+        /// <summary>
         /// Opens the Settings screen showing the settings for one profile (Basic, Recommended,
         /// or Maximum), so the user can scroll through each one (name, description, what it
         /// changes) before applying.
@@ -773,13 +796,12 @@ namespace AtlantHarden.ViewModels
         private void LoadAllSettings()
         {
             CurrentSettings.Clear();
-            var allSettings = _hardeningService.GetAllSettings();
-            foreach (var setting in allSettings)
-            {
+            var items = _hardeningService.GetAllSettings().ToList();
+            foreach (var setting in items)
                 _hardeningService.CheckCurrentStatus(setting);
+            foreach (var setting in SortForReview(items))
                 CurrentSettings.Add(setting);
-            }
-            StatusMessage = $"Showing all {allSettings.Count} settings";
+            StatusMessage = $"Showing all {items.Count} settings";
         }
 
         private static bool InProfile(HardeningSetting s, string profile) => profile switch
@@ -792,16 +814,13 @@ namespace AtlantHarden.ViewModels
         private void LoadProfileSettings(string profile)
         {
             CurrentSettings.Clear();
-            // Grouped by category for readable scrolling.
             var items = _hardeningService.GetAllSettings()
                 .Where(s => InProfile(s, profile))
-                .OrderBy(s => s.Category.ToString())
-                .ThenBy(s => s.Name);
+                .ToList();
             foreach (var setting in items)
-            {
-                _hardeningService.CheckCurrentStatus(setting);
+                _hardeningService.CheckCurrentStatus(setting);   // refresh status before sorting
+            foreach (var setting in SortForReview(items))
                 CurrentSettings.Add(setting);
-            }
             StatusMessage = $"Showing {CurrentSettings.Count} {profile} settings";
         }
 
@@ -818,13 +837,11 @@ namespace AtlantHarden.ViewModels
             if (SelectedCategory == null) return;
 
             CurrentSettings.Clear();
-            var settings = _hardeningService.GetSettingsByCategory(SelectedCategory.Category);
-            
+            var settings = _hardeningService.GetSettingsByCategory(SelectedCategory.Category).ToList();
             foreach (var setting in settings)
-            {
                 _hardeningService.CheckCurrentStatus(setting);
+            foreach (var setting in SortForReview(settings))
                 CurrentSettings.Add(setting);
-            }
 
             StatusMessage = $"Loaded {settings.Count} settings for {SelectedCategory.Name}";
         }
@@ -875,13 +892,12 @@ namespace AtlantHarden.ViewModels
             }
 
             var filteredList = filtered.ToList();
-            CurrentSettings.Clear();
             foreach (var setting in filteredList)
-            {
-                _hardeningService.CheckCurrentStatus(setting);
+                _hardeningService.CheckCurrentStatus(setting);   // refresh status before sorting
+            CurrentSettings.Clear();
+            foreach (var setting in SortForReview(filteredList))
                 CurrentSettings.Add(setting);
-            }
-            
+
             StatusMessage = $"Found {filteredList.Count} settings";
         }
 

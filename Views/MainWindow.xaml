@@ -299,8 +299,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- DISA STIG Compliance Card -->
-                    <Border CornerRadius="12" Margin="0,0,0,16">
+                    <!-- DISA STIG Compliance Card (click → all STIG settings) -->
+                    <Border CornerRadius="12" Margin="0,0,0,16" Cursor="Hand" ToolTip="View all DISA STIG settings">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ShowComplianceCommand}" CommandParameter="Stig"/>
+                        </Border.InputBindings>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.5">
                                 <GradientStop Color="#1A2D4A" Offset="0"/>
@@ -370,8 +373,11 @@
                         </Grid>
                     </Border>
 
-                    <!-- ACSC Compliance Card -->
-                    <Border CornerRadius="12" Margin="0,0,0,16">
+                    <!-- ACSC Compliance Card (click → Essential Eight settings) -->
+                    <Border CornerRadius="12" Margin="0,0,0,16" Cursor="Hand" ToolTip="View the ACSC Essential Eight settings">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ShowComplianceCommand}" CommandParameter="Acsc"/>
+                        </Border.InputBindings>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.5">
                                 <GradientStop Color="#1A2D3A" Offset="0"/>
@@ -615,6 +621,12 @@
                                             <DataTrigger Binding="{Binding IsShowingBasic}" Value="True">
                                                 <Setter Property="Text" Value="Basic Settings"/>
                                             </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedRiskFilter}" Value="4">
+                                                <Setter Property="Text" Value="DISA STIG Settings"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedRiskFilter}" Value="5">
+                                                <Setter Property="Text" Value="ACSC Essential Eight"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
@@ -632,6 +644,12 @@
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding IsShowingBasic}" Value="True">
                                                 <Setter Property="Text" Value="The highest-impact, zero-friction core — review each, then toggle and Apply Selected"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedRiskFilter}" Value="4">
+                                                <Setter Property="Text" Value="Every automatable DISA STIG requirement — not-yet-applied first; review, then Apply Selected"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SelectedRiskFilter}" Value="5">
+                                                <Setter Property="Text" Value="The ACSC Essential Eight (July 2024) — not-yet-applied first; review, then Apply Selected"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
