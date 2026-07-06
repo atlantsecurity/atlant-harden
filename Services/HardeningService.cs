@@ -188,10 +188,30 @@ namespace AtlantHarden.Services
                 {
                     var currentValue = RegistryService.ReadValue(setting.RegistryPath, setting.RegistryKey);
                     setting.CurrentValue = currentValue?.ToString() ?? "Not Set";
-                    
+
                     if (setting.RecommendedValue != null)
                     {
                         setting.IsApplied = AreValuesEqual(currentValue, setting.RecommendedValue);
+                    }
+
+                    // SMBv1 is fully removable on Win10/11 via the "SMB1Protocol" optional feature.
+                    // When it's removed, the SMB1 driver service key is gone and the hardening value
+                    // never exists — but SMBv1 is actually absent (stronger than merely disabled).
+                    // Treat a removed driver as compliant so we don't false-flag SMBv1 as enabled.
+                    if (!setting.IsApplied)
+                    {
+                        var smb1Driver = setting.Id switch
+                        {
+                            "NET_DisableSMB1Client" => "mrxsmb10",  // SMB1 client driver
+                            "NET_DisableSMB1"        => "srv",       // SMB1 server driver
+                            _ => null
+                        };
+                        if (smb1Driver != null &&
+                            !RegistryService.KeyExists($@"HKLM\SYSTEM\CurrentControlSet\Services\{smb1Driver}"))
+                        {
+                            setting.IsApplied = true;
+                            setting.CurrentValue = "Removed (SMB1Protocol feature not installed)";
+                        }
                     }
                 }
                 // For PowerShell/Command/Firewall settings, use VerifyRegistryPath if available
