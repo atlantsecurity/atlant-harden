@@ -4,6 +4,12 @@
 
 AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **579 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — through one-click, review-before-apply profiles with full backup and restore. The released build is a single **self-contained executable** (no .NET runtime to install).
 
+## ⬇️ Download
+
+### [Download AtlantHarden v2.0 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
+
+Single `.zip`, ~63 MB, **self-contained** — no .NET install required. Extract it, then right-click `AtlantHarden.exe` → **Run as administrator**. It's not code-signed yet, so SmartScreen may prompt — choose *More info → Run anyway*. See all [releases and notes](https://github.com/atlantsecurity/atlant-harden/releases/latest).
+
 ## Features
 
 ### 🛡️ Comprehensive Security Categories
