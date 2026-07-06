@@ -1,0 +1,29 @@
+# Build output
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+publish/
+**/win-x64/
+
+# Visual Studio / user-specific
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Regenerable STIG enrichment cache (rebuilt by tools/Generate-StigCatalog.ps1)
+tools/.cache/
+
+# Release artifacts (published as GitHub Release assets, not committed)
+*.zip
+
+# Scratch / temp
+_stigdata/
+_settings.json
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

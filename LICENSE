@@ -1,0 +1,87 @@
+AtlantHarden — Proprietary, Source-Available License
+Copyright (c) 2026 Atlant Security LTD. All rights reserved.
+
+This repository is published for TRANSPARENCY AND AUDIT purposes only.
+It is SOURCE-AVAILABLE, NOT open source. Being able to read this code does
+NOT grant you any right to use it. Any use of the code requires a paid
+commercial license from Atlant Security.
+
+-------------------------------------------------------------------------------
+
+1. DEFINITIONS
+   "Software" means the source code, scripts, data files, configuration,
+   documentation, and other materials contained in this repository.
+   "Atlant Security" means Atlant Security LTD, a company registered in Bulgaria,
+   and its successors and assigns, the copyright holder of the Software.
+   "You" means the individual or entity that accesses the Software.
+   "Commercial License" means a separate, signed, written agreement with Atlant
+   Security that grants rights beyond those in Section 2.
+
+2. LIMITED GRANT — AUDIT ONLY
+   Subject to Your full compliance with this License, Atlant Security grants You
+   a personal, non-exclusive, non-transferable, non-sublicensable, revocable
+   right to access, view, and read the Software solely to:
+     (a) evaluate it; and
+     (b) perform security review, code audit, and verification.
+   You may retain a single local copy strictly as necessary to perform such
+   review.
+
+3. RESERVATION OF RIGHTS — NO RIGHT TO USE
+   All rights not expressly granted in Section 2 are reserved by Atlant Security.
+   Without a Commercial License, You may NOT, in whole or in part:
+     (a) use, run, execute, compile, build, or deploy the Software, or operate
+         it for any personal, internal, business, production, evaluation-in-use,
+         or other purpose;
+     (b) copy or reproduce the Software beyond the single audit copy in Section 2;
+     (c) modify, adapt, translate, or create derivative works of the Software;
+     (d) distribute, publish, redistribute, sublicense, sell, rent, lease, lend,
+         host, or otherwise transfer the Software or any derivative;
+     (e) incorporate, embed, port, or reuse any portion of the Software —
+         including its code, structure, logic, data, the DISA STIG catalog, or
+         the generator scripts — in any other software, product, service, model,
+         or dataset; or
+     (f) remove, obscure, or alter any copyright, license, or attribution notice.
+
+4. COMMERCIAL LICENSE
+   Any use of the Software beyond the audit rights in Section 2 — including any
+   use of its code in Your own tools, products, services, or internal systems —
+   requires a paid Commercial License. To obtain one, contact Atlant Security LTD
+   via the contact form at: https://atlantsecurity.com/contact
+
+5. THE COMPILED APPLICATION IS SEPARATE
+   The compiled AtlantHarden application is distributed by Atlant Security LTD
+   from its website under its own end-user terms: it is free for personal,
+   non-commercial use, and any COMMERCIAL OR FOR-PROFIT USE of the application
+   requires a separate licensing agreement with Atlant Security LTD (via the
+   contact form at https://atlantsecurity.com/contact). This License governs only
+   the Software (source) in this repository and grants no rights to that binary.
+
+6. CONTRIBUTIONS
+   Atlant Security does not accept outside contributions under an open-source
+   grant. Any material You submit to this repository (for example, via pull
+   request or patch) is assigned to Atlant Security and may be used by it without
+   restriction or compensation, unless a separate written agreement provides
+   otherwise.
+
+7. NO WARRANTY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
+
+8. LIMITATION OF LIABILITY
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL ATLANT SECURITY BE
+   LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+   CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+9. TERMINATION
+   Any breach of this License automatically and immediately terminates the rights
+   granted in Section 2. Upon termination You must destroy all copies of the
+   Software in Your possession or control.
+
+10. GOVERNING LAW
+   This License is governed by the laws of Bulgaria, without regard to its
+   conflict-of-laws principles.
+
+-------------------------------------------------------------------------------
+For commercial licensing, use the contact form at https://atlantsecurity.com/contact

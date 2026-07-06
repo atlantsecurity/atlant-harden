@@ -1,0 +1,1126 @@
+<Window x:Class="AtlantHarden.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:AtlantHarden.ViewModels"
+        xmlns:local="clr-namespace:AtlantHarden.Views"
+        Title="AtlantHarden - Windows Hardening Tool"
+        Height="820" Width="1280"
+        MinHeight="540" MinWidth="820"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BackgroundDarkBrush}">
+    
+    <Window.DataContext>
+        <vm:MainViewModel/>
+    </Window.DataContext>
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:ScoreToColorConverter x:Key="ScoreToColorConverter"/>
+        
+        <!-- Gradient Brushes -->
+        <LinearGradientBrush x:Key="AccentGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#0066FF" Offset="0"/>
+            <GradientStop Color="#00AAFF" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="SuccessGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#238636" Offset="0"/>
+            <GradientStop Color="#2EA043" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="WarningGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#D29922" Offset="0"/>
+            <GradientStop Color="#E3B341" Offset="1"/>
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="DangerGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#DA3633" Offset="0"/>
+            <GradientStop Color="#F85149" Offset="1"/>
+        </LinearGradientBrush>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{Binding SidebarWidth}"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left Sidebar -->
+        <Border Grid.Column="0" Background="#0D1117">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Logo Section + collapse toggle -->
+                <Border Grid.Row="0" Padding="12,16,12,12">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Full logo (hidden in rail mode) -->
+                            <Button Grid.Column="0" Command="{Binding OpenAtlantSecurityCommand}"
+                                    Background="Transparent" BorderThickness="0" Cursor="Hand"
+                                    HorizontalAlignment="Left" Padding="4,0,0,0"
+                                    Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}">
+                                <Image Source="/Resources/logo.png" Height="28"/>
+                            </Button>
+                            <!-- Collapse / expand toggle (always visible) -->
+                            <Button Grid.Column="1" Command="{Binding ToggleSidebarCommand}"
+                                    Style="{StaticResource NavButtonStyle}"
+                                    Padding="8" HorizontalAlignment="Right"
+                                    ToolTip="Collapse / expand sidebar">
+                                <TextBlock Text="☰" FontSize="16" Foreground="#8B949E"/>
+                            </Button>
+                        </Grid>
+                        <Border Background="#1A3D5A" CornerRadius="4" Padding="8,4" HorizontalAlignment="Left" Margin="4,8,0,0"
+                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="{Binding VersionInfo}" FontSize="10" Foreground="#58A6FF"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Main Navigation -->
+                <StackPanel Grid.Row="1" Margin="8,0">
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ShowDashboardCommand}" Padding="12,10" ToolTip="Dashboard">
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="📊" FontSize="15"/>
+                            <TextBlock Grid.Column="1" Text="Dashboard" FontWeight="SemiBold"
+                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ShowAllSettingsCommand}" Padding="12,10" ToolTip="All Settings">
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="⚡" FontSize="15"/>
+                            <TextBlock Grid.Column="1" Text="All Settings"
+                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ShowBackupsCommand}" Padding="12,10" ToolTip="Backup &amp; Restore">
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="💾" FontSize="15"/>
+                            <TextBlock Grid.Column="1" Text="Backup &amp; Restore"
+                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+
+                <!-- Category List -->
+                <ScrollViewer Grid.Row="2" Margin="0,8,0,0" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="8,0">
+                        <ItemsControl ItemsSource="{Binding CategoriesView}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Style="{StaticResource NavButtonStyle}"
+                                            Command="{Binding DataContext.SelectCategoryCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Padding="12,8" ToolTip="{Binding Name}">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="28"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Icon}" FontSize="14"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12"
+                                                       TextTrimming="CharacterEllipsis" Foreground="#8B949E"
+                                                       Visibility="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                                            <Border Grid.Column="2" CornerRadius="10" Padding="6,2"
+                                                    Background="#21262D"
+                                                    Visibility="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
+                                                <TextBlock Text="{Binding SettingsCount}" FontSize="10" Foreground="#8B949E"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                            <!-- Section headers: "Hardening Categories" / "DISA STIG Compliance" -->
+                            <ItemsControl.GroupStyle>
+                                <GroupStyle>
+                                    <GroupStyle.HeaderTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding Name}" Foreground="#484F58"
+                                                       FontSize="10" FontWeight="Bold"
+                                                       Margin="12,12,0,6"
+                                                       Visibility="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
+                                        </DataTemplate>
+                                    </GroupStyle.HeaderTemplate>
+                                </GroupStyle>
+                            </ItemsControl.GroupStyle>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Bottom -->
+                <StackPanel Grid.Row="3" Margin="8,8,8,16">
+                    <Separator Background="#21262D" Margin="4,0,4,8"/>
+                    
+                    <!-- Configuration Import/Export -->
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ImportConfigurationCommand}" Padding="12,8" ToolTip="Import Config">
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="📥" FontSize="14"/>
+                            <TextBlock Grid.Column="1" Text="Import Config" FontSize="12"
+                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+                    </Button>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ExportConfigurationCommand}" Padding="12,8" ToolTip="Export Config">
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="📤" FontSize="14"/>
+                            <TextBlock Grid.Column="1" Text="Export Config" FontSize="12"
+                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+                    </Button>
+
+                    <Separator Background="#21262D" Margin="4,8,4,8"/>
+                    <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ShowAboutCommand}" Padding="12,8" ToolTip="About">
+                        <Grid HorizontalAlignment="Left">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="28"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="ℹ️" FontSize="14"/>
+                            <TextBlock Grid.Column="1" Text="About" FontSize="12"
+                                       Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Column="1" Background="#161B22">
+            
+            <!-- Dashboard View -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentView}" Value="Dashboard">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                
+                <StackPanel Margin="24,20">
+                    <!-- Header -->
+                    <TextBlock Text="Security Dashboard" FontSize="26" FontWeight="Bold" 
+                               Foreground="#F0F6FC" Margin="0,0,0,4"/>
+                    <TextBlock Text="Monitor and improve your Windows security posture" 
+                               FontSize="13" Foreground="#8B949E" Margin="0,0,0,20"/>
+
+                    <!-- Security Score Card -->
+                    <Border CornerRadius="12" Margin="0,0,0,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.5">
+                                <GradientStop Color="#1A3D5A" Offset="0"/>
+                                <GradientStop Color="#0D2137" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid Margin="24,20">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Score Circle -->
+                            <Grid Width="120" Height="120">
+                                <Ellipse Stroke="#21262D" StrokeThickness="8" Fill="Transparent"/>
+                                <Ellipse Stroke="{Binding SecurityScore, Converter={StaticResource ScoreToColorConverter}}" StrokeThickness="8" Fill="Transparent"
+                                         StrokeDashArray="2.5 0.5" StrokeDashCap="Round"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding SecurityScore}" FontSize="36" FontWeight="Bold" 
+                                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="/ 100" FontSize="14" Foreground="#8B949E" HorizontalAlignment="Center" Margin="0,-4,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Score Details -->
+                            <StackPanel Grid.Column="1" Margin="24,0" VerticalAlignment="Center">
+                                <TextBlock Text="Security Score" FontSize="18" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="{Binding SecurityLevel}" FontSize="14" 
+                                           Foreground="{Binding SecurityScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,12"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="12" LineHeight="18">
+                                    <Run Text="{Binding AppliedSettingsCount, Mode=OneWay}"/>
+                                    <Run Text=" of "/>
+                                    <Run Text="{Binding TotalSettingsCount, Mode=OneWay}"/>
+                                    <Run Text=" security settings are currently applied to your system."/>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Quick Action -->
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                <Button Style="{StaticResource SuccessButtonStyle}"
+                                        Command="{Binding ApplyRecommendedCommand}"
+                                        Padding="20,12">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding QuickActionButtonIcon}" FontSize="16" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding QuickActionButtonText}" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource SecondaryButtonStyle}"
+                                        Command="{Binding ShowRecommendedCommand}"
+                                        Padding="20,8" Margin="0,8,0,0" HorizontalAlignment="Stretch">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <TextBlock Text="🔍" FontSize="13" Margin="0,0,8,0"/>
+                                        <TextBlock Text="Show Recommended" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- DISA STIG Compliance Card -->
+                    <Border CornerRadius="12" Margin="0,0,0,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.5">
+                                <GradientStop Color="#1A2D4A" Offset="0"/>
+                                <GradientStop Color="#0D1A2F" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid Margin="24,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- STIG Score Circle -->
+                            <Grid Width="80" Height="80">
+                                <Ellipse Stroke="#21262D" StrokeThickness="6" Fill="Transparent"/>
+                                <Ellipse Stroke="{Binding STIGComplianceScore, Converter={StaticResource ScoreToColorConverter}}" StrokeThickness="6" Fill="Transparent"
+                                         StrokeDashArray="2.5 0.5" StrokeDashCap="Round"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding STIGComplianceScore}" FontSize="24" FontWeight="Bold" 
+                                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="%" FontSize="11" Foreground="#8B949E" HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- STIG Details -->
+                            <StackPanel Grid.Column="1" Margin="20,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🏛️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="DISA STIG Compliance" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding STIGComplianceLevel}" FontSize="13" 
+                                           Foreground="{Binding STIGComplianceScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,8"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="11" LineHeight="16">
+                                    <Run Text="{Binding AppliedSTIGCount, Mode=OneWay}"/>
+                                    <Run Text=" of "/>
+                                    <Run Text="{Binding STIGSettingsCount, Mode=OneWay}"/>
+                                    <Run Text=" DoD STIG requirements applied"/>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- Per-product STIG breakdown -->
+                            <Border Grid.Column="2" CornerRadius="8" Background="#1A0066CC" Padding="14,10" VerticalAlignment="Center">
+                                <ItemsControl ItemsSource="{Binding StigProductSummaries}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2" MinWidth="190">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" MinWidth="90"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#58A6FF" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding StigVersion}" FontSize="10" Foreground="#8B949E" Margin="8,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Progress}" FontSize="10" Foreground="#C9D1D9" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- ACSC Compliance Card -->
+                    <Border CornerRadius="12" Margin="0,0,0,16">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0.5">
+                                <GradientStop Color="#1A2D3A" Offset="0"/>
+                                <GradientStop Color="#0D1A25" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid Margin="24,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- ACSC Score Circle -->
+                            <Grid Width="80" Height="80">
+                                <Ellipse Stroke="#21262D" StrokeThickness="6" Fill="Transparent"/>
+                                <Ellipse Stroke="{Binding ACSCComplianceScore, Converter={StaticResource ScoreToColorConverter}}" StrokeThickness="6" Fill="Transparent"
+                                         StrokeDashArray="2.5 0.5" StrokeDashCap="Round"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <RotateTransform Angle="-90"/>
+                                    </Ellipse.RenderTransform>
+                                </Ellipse>
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding ACSCComplianceScore}" FontSize="24" FontWeight="Bold"
+                                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="%" FontSize="11" Foreground="#8B949E" HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- ACSC Details -->
+                            <StackPanel Grid.Column="1" Margin="20,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="🇦🇺" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="ACSC Essential Eight" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding ACSCComplianceLevel}" FontSize="13"
+                                           Foreground="{Binding ACSCComplianceScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,8"/>
+                                <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="11" LineHeight="16">
+                                    <Run Text="{Binding AppliedACSCCount, Mode=OneWay}"/>
+                                    <Run Text=" of "/>
+                                    <Run Text="{Binding ACSCSettingsCount, Mode=OneWay}"/>
+                                    <Run Text=" ACSC requirements applied"/>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <!-- ACSC Info -->
+                            <Border Grid.Column="2" CornerRadius="8" Background="#1A00CC66" Padding="12,8" VerticalAlignment="Center">
+                                <StackPanel>
+                                    <TextBlock Text="Essential Eight" FontSize="11" FontWeight="SemiBold" Foreground="#00CC66"/>
+                                    <TextBlock Text="July 2024" FontSize="10" Foreground="#8B949E"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Quick Profiles -->
+                    <TextBlock Text="Quick Hardening Profiles" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#F0F6FC" Margin="0,8,0,12"/>
+                    <Grid Margin="0,0,0,20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Basic Profile -->
+                        <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,8,0" Padding="16">
+                            <StackPanel>
+                                <Border Width="48" Height="48" CornerRadius="12" Background="#1A238636" Margin="0,0,0,12">
+                                    <TextBlock Text="🛡️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Basic" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Highest-ROI core, zero friction" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding BasicProfileCount, StringFormat='{}{0} settings'}" 
+                                           FontSize="11" Foreground="#238636" Margin="0,0,0,10"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
+                                        Command="{Binding ApplyBasicProfileCommand}"
+                                        HorizontalAlignment="Stretch" Padding="0,8"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}" Content="Show settings"
+                                        Command="{Binding ShowProfileCommand}" CommandParameter="Basic"
+                                        HorizontalAlignment="Stretch" Padding="0,7" Margin="0,6,0,0" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Recommended Profile -->
+                        <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="4,0" Padding="16"
+                                BorderBrush="#238636" BorderThickness="1">
+                            <StackPanel>
+                                <Border Width="48" Height="48" CornerRadius="12" Background="#1A58A6FF" Margin="0,0,0,12">
+                                    <TextBlock Text="⚡" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Recommended" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                    <Border Background="#238636" CornerRadius="4" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="BEST" FontSize="9" Foreground="White" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Text="Stops real malware &amp; exploits — no crippling" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding RecommendedProfileCount, StringFormat='{}{0} settings'}"
+                                           FontSize="11" Foreground="#58A6FF" Margin="0,0,0,10"/>
+                                <Button Style="{StaticResource SuccessButtonStyle}" Content="Apply"
+                                        Command="{Binding ApplyRecommendedCommand}"
+                                        HorizontalAlignment="Stretch" Padding="0,8"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}" Content="Show settings"
+                                        Command="{Binding ShowProfileCommand}" CommandParameter="Recommended"
+                                        HorizontalAlignment="Stretch" Padding="0,7" Margin="0,6,0,0" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Maximum Profile -->
+                        <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="4,0" Padding="16">
+                            <StackPanel>
+                                <Border Width="48" Height="48" CornerRadius="12" Background="#1AD29922" Margin="0,0,0,12">
+                                    <TextBlock Text="🔒" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <TextBlock Text="Maximum" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Everything, incl. STIG lockdowns (friction)" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding MaximumProfileCount, StringFormat='{}{0} settings'}" 
+                                           FontSize="11" Foreground="#D29922" Margin="0,0,0,10"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
+                                        Command="{Binding ApplyMaximumProfileCommand}"
+                                        HorizontalAlignment="Stretch" Padding="0,8"/>
+                                <Button Style="{StaticResource SecondaryButtonStyle}" Content="Show settings"
+                                        Command="{Binding ShowProfileCommand}" CommandParameter="Maximum"
+                                        HorizontalAlignment="Stretch" Padding="0,7" Margin="0,6,0,0" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+
+                    </Grid>
+
+                    <!-- Category Overview -->
+                    <TextBlock Text="Category Overview" FontSize="16" FontWeight="SemiBold" 
+                               Foreground="#F0F6FC" Margin="0,8,0,12"/>
+                    <ItemsControl ItemsSource="{Binding Categories}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="3"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource CardStyle}" Margin="0,0,8,8" Padding="14">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Icon}" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" 
+                                                       Foreground="#F0F6FC" TextTrimming="CharacterEllipsis"/>
+                                            <Grid Margin="0,6,0,0">
+                                                <ProgressBar Value="{Binding EnabledCount}" Maximum="{Binding SettingsCount}"
+                                                             Height="4" Background="#21262D" Foreground="#238636"/>
+                                            </Grid>
+                                            <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#8B949E">
+                                                <Run Text="{Binding EnabledCount, Mode=OneWay}"/>
+                                                <Run Text=" / "/>
+                                                <Run Text="{Binding SettingsCount, Mode=OneWay}"/>
+                                                <Run Text=" applied"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Export Report Button -->
+                    <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0" Padding="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="📄 Export Security Report" FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Generate a detailed HTML report of your current security configuration" 
+                                           FontSize="12" Foreground="#8B949E" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding ExportReportCommand}"
+                                    Padding="16,10">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="📊" FontSize="14" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Export Report"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Settings View -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentView}" Value="Settings">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Header -->
+                <Border Grid.Row="0" Background="#0D1117" Padding="20,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel>
+                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F0F6FC" TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{Binding SelectedCategory.Name}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsShowingAllSettings}" Value="True">
+                                                <Setter Property="Text" Value="All Security Settings"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsShowingRecommended}" Value="True">
+                                                <Setter Property="Text" Value="Recommended Settings"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsShowingBasic}" Value="True">
+                                                <Setter Property="Text" Value="Basic Settings"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Foreground="#8B949E" FontSize="12" Margin="0,2,0,0">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{Binding SelectedCategory.Description}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsShowingAllSettings}" Value="True">
+                                                <Setter Property="Text" Value="Browse and configure all available security hardening options"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsShowingRecommended}" Value="True">
+                                                <Setter Property="Text" Value="High-ROI, low-friction protection — review each, then toggle and Apply Selected"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsShowingBasic}" Value="True">
+                                                <Setter Property="Text" Value="The highest-impact, zero-friction core — review each, then toggle and Apply Selected"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource SecondaryButtonStyle}" Content="Select All" Padding="14,8" FontSize="12"
+                                    Command="{Binding SelectAllCommand}" Margin="0,0,6,0"/>
+                            <Button Style="{StaticResource SecondaryButtonStyle}" Content="Deselect" Padding="14,8" FontSize="12"
+                                    Command="{Binding DeselectAllCommand}" Margin="0,0,6,0"/>
+                            <Button Style="{StaticResource SuccessButtonStyle}" Padding="16,8" FontSize="12"
+                                    Command="{Binding ApplySelectedCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="⚡" Margin="0,0,6,0"/>
+                                    <TextBlock Text="Apply Selected"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Filters Bar -->
+                <Border Grid.Row="1" Background="#161B22" Padding="20,10" BorderBrush="#21262D" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Search (flexible width, shrinks on small screens) -->
+                        <Border Grid.Column="0" Background="#0D1117" BorderBrush="#30363D" BorderThickness="1"
+                                CornerRadius="6" Padding="10,6" MinWidth="120" MaxWidth="380"
+                                HorizontalAlignment="Left" Margin="0,0,12,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.6"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent" BorderThickness="0"
+                                         Foreground="#F0F6FC" CaretBrush="#F0F6FC"
+                                         FontSize="13" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Risk / STIG Filter -->
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Filter:" Foreground="#8B949E" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                            <ComboBox SelectedIndex="{Binding SelectedRiskFilter}" Width="170" FontSize="12">
+                                <ComboBoxItem Content="All"/>
+                                <ComboBoxItem Content="Low Risk"/>
+                                <ComboBoxItem Content="Medium Risk"/>
+                                <ComboBoxItem Content="High Risk"/>
+                                <ComboBoxItem Content="STIG Only"/>
+                                <ComboBoxItem Content="ACSC Only"/>
+                                <ComboBoxItem Content="STIG: CAT I (High)"/>
+                                <ComboBoxItem Content="STIG: CAT II (Medium)"/>
+                                <ComboBoxItem Content="STIG: CAT III (Low)"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Settings List (Virtualized) -->
+                <ListBox Grid.Row="2"
+                         ItemsSource="{Binding CurrentSettings}"
+                         Background="Transparent" BorderThickness="0"
+                         Padding="16,12"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         HorizontalContentAlignment="Stretch">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="Margin" Value="0"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#0D1117" CornerRadius="8" Margin="0,0,0,6" Padding="14"
+                                        BorderBrush="#21262D" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Toggle -->
+                                        <CheckBox Style="{StaticResource ToggleSwitchStyle}"
+                                                  IsChecked="{Binding IsEnabled}"
+                                                  VerticalAlignment="Top" Margin="0,2,14,0"/>
+
+                                        <!-- Details -->
+                                        <StackPanel Grid.Column="1">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                                
+                                                <!-- Risk Badge -->
+                                                <Border CornerRadius="4" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Risk}" Value="Low">
+                                                                    <Setter Property="Background" Value="#1A238636"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Risk}" Value="Medium">
+                                                                    <Setter Property="Background" Value="#1AD29922"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Risk}" Value="High">
+                                                                    <Setter Property="Background" Value="#1ADA3633"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Risk}" FontSize="10" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Risk}" Value="Low">
+                                                                        <Setter Property="Foreground" Value="#238636"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Risk}" Value="Medium">
+                                                                        <Setter Property="Foreground" Value="#D29922"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding Risk}" Value="High">
+                                                                        <Setter Property="Foreground" Value="#DA3633"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+
+                                                <!-- Applied Badge -->
+                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,0"
+                                                        Background="#1A238636"
+                                                        Visibility="{Binding IsApplied, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="✓ Applied" FontSize="10" Foreground="#238636"/>
+                                                </Border>
+
+                                                <!-- Category -->
+                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,0" Background="#21262D">
+                                                    <TextBlock Text="{Binding Category}" FontSize="9" Foreground="#8B949E"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <TextBlock Text="{Binding Description}" Foreground="#8B949E" FontSize="12" TextWrapping="Wrap"/>
+
+                                            <!-- Warning -->
+                                            <Border Visibility="{Binding ImpactWarning, Converter={StaticResource NullToVisibilityConverter}}"
+                                                    Background="#1AD29922" CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="⚠️" FontSize="11" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="{Binding ImpactWarning}" Foreground="#D29922" FontSize="11"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Detailed Info (if available) -->
+                                            <TextBlock Text="{Binding DetailedInfo}"
+                                                       Visibility="{Binding DetailedInfo, Converter={StaticResource NullToVisibilityConverter}}"
+                                                       Foreground="#6E7681" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                                                       FontStyle="Italic"/>
+
+                                            <!-- Reference URLs (if available, display-only) -->
+                                            <ItemsControl ItemsSource="{Binding ReferenceUrls}"
+                                                          Visibility="{Binding ReferenceUrls, Converter={StaticResource NullToVisibilityConverter}}"
+                                                          Margin="0,4,0,0">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Foreground="#6E7681" FontSize="10" Margin="0,1,0,1">
+                                                            <Run Text="📎 "/><Run Text="{Binding Mode=OneWay}"/>
+                                                        </TextBlock>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <!-- Registry Path (collapsible detail) -->
+                                            <Border Background="#161B22" CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
+                                                <TextBlock FontSize="10" Foreground="#6E7681" FontFamily="Consolas" TextWrapping="Wrap">
+                                                    <Run Text="{Binding RegistryPath, Mode=OneWay}"/>
+                                                    <Run Text=" → "/>
+                                                    <Run Text="{Binding RegistryKey, Mode=OneWay}"/>
+                                                </TextBlock>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Current Value -->
+                                        <StackPanel Grid.Column="2" MinWidth="120" Margin="14,0,0,0">
+                                            <TextBlock Text="Current" FontSize="10" Foreground="#6E7681"/>
+                                            <TextBlock Text="{Binding CurrentValue, FallbackValue='Not Set'}" 
+                                                       FontSize="12" Foreground="#8B949E" FontFamily="Consolas"/>
+                                            <TextBlock Text="Recommended" FontSize="10" Foreground="#6E7681" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{Binding RecommendedValue}" 
+                                                       FontSize="12" Foreground="#58A6FF" FontFamily="Consolas"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Status Bar -->
+                <Border Grid.Row="3" Background="#0D1117" Padding="20,10">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="#8B949E" FontSize="12" VerticalAlignment="Center"/>
+
+                        <ProgressBar Grid.Column="1" Width="150" Height="4" Margin="16,0"
+                                     Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"
+                                     Background="#21262D" Foreground="#238636"
+                                     Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}"/>
+
+                        <TextBlock Grid.Column="2" Foreground="#8B949E" FontSize="12" VerticalAlignment="Center">
+                            <Run Text="{Binding CurrentSettings.Count, Mode=OneWay}"/>
+                            <Run Text=" settings"/>
+                        </TextBlock>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- Backups View -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentView}" Value="Backups">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                
+                <StackPanel Margin="24,20">
+                    <TextBlock Text="Backup &amp; Restore" FontSize="26" FontWeight="Bold" Foreground="#F0F6FC" Margin="0,0,0,4"/>
+                    <TextBlock Text="Protect your system with restore points and registry backups" 
+                               FontSize="13" Foreground="#8B949E" Margin="0,0,0,20"/>
+
+                    <!-- System Restore Section -->
+                    <TextBlock Text="🔄 Windows System Restore" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,12"/>
+                    
+                    <!-- Create System Restore Point -->
+                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="16" Margin="0,0,0,8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="40" Height="40" CornerRadius="10" Background="#1A238636" Margin="0,0,14,0">
+                                <TextBlock Text="🛡️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Create Restore Point" FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Creates a Windows System Restore point before making changes" 
+                                           FontSize="11" Foreground="#8B949E" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Style="{StaticResource SuccessButtonStyle}" 
+                                    Command="{Binding CreateRestorePointCommand}" Padding="14,8">
+                                <TextBlock Text="Create"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Open System Restore Dialog -->
+                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="16" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Width="40" Height="40" CornerRadius="10" Background="#1A58A6FF" Margin="0,0,14,0">
+                                <TextBlock Text="⏪" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="Restore from System Restore Point" FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Opens Windows System Restore to recover your entire system" 
+                                           FontSize="11" Foreground="#8B949E" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" 
+                                    Command="{Binding OpenSystemRestoreCommand}" Padding="14,8">
+                                <TextBlock Text="Open System Restore"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <!-- Registry Backups Section -->
+                    <TextBlock Text="💾 Registry Backups" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,8,0,12"/>
+                    
+                    <!-- Info -->
+                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="12" LineHeight="18">
+                                Registry backups are created automatically before applying settings. Each backup includes:
+                            </TextBlock>
+                            <StackPanel Margin="12,8,0,0">
+                                <TextBlock Text="• .ashb file - Full backup data for app restore" Foreground="#8B949E" FontSize="11"/>
+                                <TextBlock Text="• restore_*.reg - Reverts to original values (double-click to apply)" Foreground="#8B949E" FontSize="11"/>
+                                <TextBlock Text="• applied_*.reg - Shows what settings were applied (reference)" Foreground="#8B949E" FontSize="11"/>
+                            </StackPanel>
+                            <Button Style="{StaticResource SecondaryButtonStyle}" Content="📂 Open Backup Folder" 
+                                    Command="{Binding OpenBackupFolderCommand}"
+                                    HorizontalAlignment="Left" Margin="0,12,0,0" Padding="12,6" FontSize="11"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Empty State -->
+                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="32"
+                            Visibility="{Binding HasNoBackups, Converter={StaticResource BoolToVis}}">
+                        <StackPanel HorizontalAlignment="Center">
+                            <TextBlock Text="📦" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                            <TextBlock Text="No backups yet" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Backups are created automatically when you apply settings" 
+                                       Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Backup Items -->
+                    <ItemsControl ItemsSource="{Binding Backups}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" 
+                                        Padding="14" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="44" Height="44" CornerRadius="10" Background="#1A58A6FF" Margin="0,0,14,0">
+                                            <TextBlock Text="📦" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC">
+                                                <Run Text="{Binding CreatedAt, StringFormat='{}{0:MMM d, yyyy}'}"/>
+                                                <Run Text=" at " Foreground="#8B949E"/>
+                                                <Run Text="{Binding CreatedAt, StringFormat='{}{0:h:mm tt}'}"/>
+                                            </TextBlock>
+                                            <TextBlock FontSize="12" Foreground="#8B949E">
+                                                <Run Text="{Binding SettingsCount, Mode=OneWay}"/>
+                                                <Run Text=" registry entries"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                            <Button Style="{StaticResource SuccessButtonStyle}"
+                                                    Command="{Binding DataContext.RestoreBackupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" Padding="12,8" FontSize="12">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="🔄" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="Restore"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Style="{StaticResource DangerButtonStyle}"
+                                                    Command="{Binding DataContext.DeleteBackupCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                    CommandParameter="{Binding}" Padding="10,8" Margin="6,0,0,0" FontSize="12">
+                                                <TextBlock Text="🗑️"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- About View -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ScrollViewer.Style>
+                    <Style TargetType="ScrollViewer">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentView}" Value="About">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ScrollViewer.Style>
+                
+                <StackPanel Margin="24,20" MaxWidth="650" HorizontalAlignment="Center">
+                    <Button Command="{Binding OpenAtlantSecurityCommand}" 
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            HorizontalAlignment="Center" Padding="0" Margin="0,0,0,16">
+                        <Image Source="/Resources/logo.png" Height="50"/>
+                    </Button>
+                    <TextBlock Text="Windows 11 Security Hardening" FontSize="22" FontWeight="Bold" 
+                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding VersionInfo}" FontSize="12" Foreground="#8B949E" 
+                               HorizontalAlignment="Center" Margin="0,4,0,4"/>
+                    <TextBlock Text="{Binding BuildInfo}" FontSize="10" Foreground="#6E7681" 
+                               HorizontalAlignment="Center" Margin="0,0,0,20"/>
+
+                    <!-- CRITICAL BACKUP WARNING -->
+                    <Border Background="#1AD92E2E" BorderBrush="#D93025" BorderThickness="1" 
+                            CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="🔴" FontSize="18" Margin="0,0,10,0"/>
+                                <TextBlock Text="Critical: Backup Your System" FontSize="15" FontWeight="SemiBold" Foreground="#D93025"/>
+                            </StackPanel>
+                            <TextBlock TextWrapping="Wrap" Foreground="#F0F6FC" FontSize="13" LineHeight="22">
+                                Always use the Backup section to create a System Restore Point before running this application or changing any settings. Do not rely on the app to create your backups for you! A manual System Restore Point gives you the best protection against any issues.
+                            </TextBlock>
+                            <Button Command="{Binding OpenSystemRestoreCommand}" 
+                                    Content="Open System Restore" 
+                                    Background="#D93025" Foreground="White" 
+                                    BorderThickness="0" Padding="16,8" Margin="0,12,0,0"
+                                    HorizontalAlignment="Left" Cursor="Hand"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Disclaimer -->
+                    <Border Background="#1AD29922" BorderBrush="#D29922" BorderThickness="1" 
+                            CornerRadius="8" Padding="20" Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                <TextBlock Text="⚠️" FontSize="18" Margin="0,0,10,0"/>
+                                <TextBlock Text="Important Disclaimer" FontSize="15" FontWeight="SemiBold" Foreground="#D29922"/>
+                            </StackPanel>
+                            <TextBlock TextWrapping="Wrap" Foreground="#F0F6FC" FontSize="13" LineHeight="20">
+                                AtlantHarden provides this Windows 11 hardening application as-is. Always take a full backup of your registry before running it, regardless of the backup/recovery options in the application. Enabling all security settings will significantly change the behavior of your system - do your own research and enable settings at your own risk. AtlantHarden is not responsible for your choices.
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Features" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,12"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                    <RowDefinition/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="🛡️ Windows Defender" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="🎯 Attack Surface Reduction" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="🔐 Credential Protection" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="🌐 Browser Hardening" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="📋 Logging &amp; Auditing" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="🔒 TLS &amp; Cryptography" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="💾 Automatic Backups" Foreground="#8B949E" FontSize="12"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="🔄 System Restore Points" Foreground="#8B949E" FontSize="12"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Text="{Binding CopyrightText}" FontSize="11" Foreground="#6E7681" 
+                               HorizontalAlignment="Center" Margin="0,20,0,4"/>
+                    <Button Command="{Binding OpenAtlantSecurityCommand}" 
+                            Background="Transparent" BorderThickness="0" Cursor="Hand"
+                            HorizontalAlignment="Center" Padding="0">
+                        <TextBlock Text="https://atlantsecurity.com" FontSize="11" Foreground="#58A6FF" 
+                                   TextDecorations="Underline"/>
+                    </Button>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Processing Overlay -->
+            <Border Background="#CC000000" Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="60" Height="60" CornerRadius="30" Background="#21262D" Margin="0,0,0,16">
+                        <TextBlock Text="⚡" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="16" Foreground="#F0F6FC" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <ProgressBar Width="200" Height="4" Background="#21262D" Foreground="#238636"
+                                 Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</Window>

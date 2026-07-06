@@ -1,0 +1,14 @@
+# Normalize line endings in the repo; check out native on each OS.
+* text=auto eol=lf
+
+# Windows-only build/project files keep CRLF
+*.sln    text eol=crlf
+*.csproj text eol=crlf
+*.props  text eol=crlf
+*.targets text eol=crlf
+
+# Binary assets
+*.png binary
+*.ico binary
+*.jpg binary
+*.gif binary
