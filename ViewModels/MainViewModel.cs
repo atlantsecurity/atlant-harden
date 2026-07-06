@@ -978,6 +978,7 @@ namespace AtlantHarden.ViewModels
 
                 int successCount = 0;
                 int failCount = 0;
+                var succeeded = new List<HardeningSetting>();
 
                 // Enable settings
                 foreach (var setting in toEnable)
@@ -991,6 +992,7 @@ namespace AtlantHarden.ViewModels
                         {
                             setting.IsApplied = true;
                             successCount++;
+                            succeeded.Add(setting);
                         }
                         else
                         {
@@ -1020,6 +1022,7 @@ namespace AtlantHarden.ViewModels
                         {
                             setting.IsApplied = false;
                             successCount++;
+                            succeeded.Add(setting);
                         }
                         else
                         {
@@ -1055,30 +1058,42 @@ namespace AtlantHarden.ViewModels
 
                 UpdateDashboardProperties();
 
-                // Build result message
+                // Build result message. "Applied" = writes/commands that succeeded. Some settings
+                // don't read back as active immediately — they need a reboot to take effect, or have
+                // no auto-readable state — so report those honestly rather than as a lower count that
+                // looks like a failure.
+                int totalSelected = toEnable.Count + toDisable.Count;
+                var pending = succeeded
+                    .Where(s => toDisable.Contains(s) ? s.IsApplied : !s.IsApplied)
+                    .ToList();
+
                 var sb = new StringBuilder();
-                sb.AppendLine($"✓ Applied {successCount} changes");
-                
-                if (toEnable.Count > 0)
-                    sb.AppendLine($"  • {toEnable.Count(s => s.IsApplied)} settings enabled");
-                if (toDisable.Count > 0)
-                    sb.AppendLine($"  • {toDisable.Count(s => !s.IsApplied)} settings disabled");
-                
+                sb.AppendLine($"✓ Applied {succeeded.Count} of {totalSelected} settings");
+
+                if (pending.Count > 0)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"ℹ {pending.Count} applied but not auto-confirmed (they ran OK; some need a restart to take effect):");
+                    foreach (var s in pending.Take(12))
+                        sb.AppendLine($"   • {s.Name}");
+                    if (pending.Count > 12)
+                        sb.AppendLine($"   …and {pending.Count - 12} more");
+                }
+
                 if (failCount > 0)
                 {
                     sb.AppendLine();
-                    sb.AppendLine($"✗ {failCount} changes failed:");
+                    sb.AppendLine($"✗ {failCount} failed:");
                     foreach (var error in errors.Take(10))
                         sb.AppendLine(error);
                     if (errors.Count > 10)
-                        sb.AppendLine($"...and {errors.Count - 10} more");
+                        sb.AppendLine($"…and {errors.Count - 10} more");
                 }
 
                 sb.AppendLine();
                 sb.AppendLine("💾 Backup created in Backups folder");
-                sb.AppendLine("🔄 Some changes may require a restart");
 
-                StatusMessage = $"Complete: {successCount} changes applied";
+                StatusMessage = $"Complete: {succeeded.Count} of {totalSelected} applied";
                 
                 MessageBox.Show(sb.ToString(), "Apply Complete", MessageBoxButton.OK, 
                     failCount > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
