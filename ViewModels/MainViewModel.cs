@@ -85,6 +85,7 @@ namespace AtlantHarden.ViewModels
         private string? _shownProfile;   // null, "Basic", or "Recommended" (Maximum reuses _isShowingAllSettings)
         private int _selectedRiskFilter;
         private bool _isSidebarExpanded = true;
+        private bool _bloatSeeded;   // has "Clean Up Bloat" seeded its default selection this session?
         
         // Imported configuration tracking
         private bool _hasImportedSettings;
@@ -605,13 +606,14 @@ namespace AtlantHarden.ViewModels
                 .Where(s => s.Category == SettingCategory.Bloatware).ToList();
             foreach (var s in bloat) _hardeningService.CheckCurrentStatus(s);
 
-            // Seed the default selection (still-installed "recommended" junk) only when nothing is
-            // already checked. If the user has a selection in progress they've curated this list —
-            // don't clobber a deliberate deselection when they re-open Clean Up Bloat.
-            if (!bloat.Any(s => s.IsEnabled))
+            // Seed the default selection (still-installed "recommended" junk) only the first time
+            // Clean Up Bloat is opened this session. After that, preserve whatever the user has
+            // curated — including a deliberate "deselect everything" — rather than re-checking it.
+            if (!_bloatSeeded)
             {
                 foreach (var s in bloat)
                     s.IsEnabled = !s.IsApplied && s.Tags.Contains("recommended");
+                _bloatSeeded = true;
             }
             SelectCategory(category);
         }

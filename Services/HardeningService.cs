@@ -67,6 +67,10 @@ namespace AtlantHarden.Services
 
                     case SettingType.AppRemoval:
                         // Store/Appx removal runs PowerShell; Win32/OEM uninstall runs its command line.
+                        // Deliberately NOT time-boxed: AV/OEM uninstallers (McAfee, Norton) are
+                        // legitimately slow, and killing one mid-run would leave a half-removed,
+                        // broken install — worse than waiting. The inventory-scan query is time-boxed
+                        // instead (RunPowerShellCaptureAsync), since a read should never hang.
                         return string.IsNullOrEmpty(setting.AppxName)
                             ? await RunCommandAsync(setting.ApplyCommand)
                             : await RunPowerShellAsync(setting.ApplyCommand);
