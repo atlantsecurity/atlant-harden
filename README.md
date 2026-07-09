@@ -2,11 +2,11 @@
 
 ![Atlant Security Logo](Resources/logo.png)
 
-AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **599 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — through one-click, review-before-apply profiles with full backup and restore. The released build is a single **self-contained executable** (no .NET runtime to install).
+AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **606 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — through one-click, review-before-apply profiles with full backup and restore. It also includes one-click **Windows debloat** (remove Store junk and OEM/AV bloat) and a **Tighten Up Privacy** cleanup. The released build is a single **self-contained executable** (no .NET runtime to install).
 
 ## ⬇️ Download
 
-### [Download AtlantHarden v2.0 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
+### [Download AtlantHarden v2.1 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
 
 Single `.zip`, ~63 MB, **self-contained** — no .NET install required. Extract it, then right-click `AtlantHarden.exe` → **Run as administrator**. It's not code-signed yet, so SmartScreen may prompt — choose *More info → Run anyway*. See all [releases and notes](https://github.com/atlantsecurity/atlant-harden/releases/latest).
 
@@ -19,7 +19,8 @@ Single `.zip`, ~63 MB, **self-contained** — no .NET install required. Extract 
 - **Credential Protection** - Protect LSASS, disable WDigest, and prevent Mimikatz attacks (DISA STIG tagged)
 - **Browser Hardening** - Secure Edge, Chrome, and Firefox with enterprise policies (DISA STIG: Edge V2R5, Chrome V2R11, Firefox V6R7)
 - **Office Hardening** - Disable macros, DDE, and protect against document-based attacks (DISA STIG: Office 365 ProPlus V3R5)
-- **Privacy Settings** - Control telemetry, advertising ID, and data collection
+- **Privacy Settings** - Turn off telemetry, advertising ID, activity history, tailored experiences, and suggested/promoted content — including a one-click **Tighten Up Privacy** button
+- **Bloatware Removal** - Remove pre-installed Store junk and games, and detected OEM/AV bloat (McAfee, Norton, WildTangent, and Dell/HP/Lenovo assistant apps) — review-first, nothing removed without your confirmation
 - **Logging & Auditing** - Enable PowerShell logging, process auditing, and event log sizing (DISA STIG tagged)
 - **File Associations** - Neutralize dangerous file types to prevent ransomware
 - **Windows Firewall** - Block LOLBins from network access
@@ -80,7 +81,9 @@ DISA releases and loaded from an auditable, regenerable catalog (`Resources/stig
 Three curated profiles, each with **Apply** and a **Show settings** button that opens a scrollable review of every setting (name, description, registry change, current vs. recommended value) before anything is applied:
 - **Basic** (95 settings) - the highest-impact, effectively zero-friction core
 - **Recommended** (325 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
-- **Maximum** (599 settings) - everything, including the strict DISA STIG lockdowns
+- **Maximum** (606 settings) - everything, including the strict DISA STIG lockdowns
+
+Bloatware removal and the privacy cleanup are kept **separate** from these profiles — they're reached from the dashboard's **Cleanup & Privacy** section (a one-click *Tighten Up Privacy* and a review-first *Clean Up Bloat*), so applying a security profile never uninstalls an app.
 
 **Self-protection:** before enabling any setting, AtlantHarden allow-lists its own executable for Microsoft Defender ASR and Controlled Folder Access, and keeps Explorer SmartScreen at an overridable level — so this (unsigned) tool can always be relaunched to revert.
 

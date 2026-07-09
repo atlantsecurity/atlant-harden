@@ -180,7 +180,7 @@ namespace AtlantHarden.Models
                 {
                     Category = category,
                     Name = "Bloatware Removal",
-                    Description = "Remove unnecessary Windows apps and provisioned packages",
+                    Description = "Remove pre-installed junk: Store bloat, games, and detected OEM/AV trials (McAfee, Norton, vendor apps)",
                     Icon = "🗑️",
                     AccentColor = Color.FromRgb(104, 118, 138)
                 },

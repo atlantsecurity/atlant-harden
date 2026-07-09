@@ -146,8 +146,12 @@ namespace AtlantHarden.Services
 
             foreach (var setting in settingsList)
             {
-                bool shouldEnable = enabledIds.Contains(setting.Id);
-                
+                // Bloatware removal is destructive and is only ever selected interactively (with a
+                // per-item confirmation). An imported/shared config must never mark an app uninstall
+                // as enabled, or a later "Apply Selected" / silent run could remove it unreviewed.
+                bool shouldEnable = enabledIds.Contains(setting.Id)
+                                    && setting.Category != SettingCategory.Bloatware;
+
                 if (setting.IsEnabled != shouldEnable)
                 {
                     setting.IsEnabled = shouldEnable;

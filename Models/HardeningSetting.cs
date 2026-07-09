@@ -12,7 +12,8 @@ namespace AtlantHarden.Models
         FileAssociation,
         Firewall,
         Service,
-        AuditPolicy
+        AuditPolicy,
+        AppRemoval
     }
 
     public enum RiskLevel
@@ -78,6 +79,14 @@ namespace AtlantHarden.Models
         /// (unified 64-bit) product nodes, so whichever product is installed is hardened.
         /// </summary>
         public string[]? MirrorRegistryPaths { get; set; }
+
+        /// <summary>
+        /// For <see cref="SettingType.AppRemoval"/>: the Appx package name (e.g.
+        /// "Microsoft.XboxGamingOverlay"). Used to detect whether the app is still installed
+        /// (applied = removed). Empty for Win32/OEM removals, which detect via
+        /// <see cref="VerifyRegistryPath"/> (the Uninstall key — absent = removed).
+        /// </summary>
+        public string AppxName { get; set; } = string.Empty;
         
         // For PowerShell/Command settings
         public string ApplyCommand { get; set; } = string.Empty;

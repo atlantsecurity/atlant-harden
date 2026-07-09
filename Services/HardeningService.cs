@@ -13,6 +13,8 @@ namespace AtlantHarden.Services
         private readonly List<HardeningSetting> _allSettings;
         private readonly ASRService _asrService;
         private bool _asrStatusLoaded = false;
+        private bool _appStatusLoaded = false;
+        private readonly HashSet<string> _installedAppx = new(StringComparer.OrdinalIgnoreCase);
 
         public HardeningService()
         {
@@ -62,7 +64,13 @@ namespace AtlantHarden.Services
                     
                     case SettingType.AuditPolicy:
                         return await RunCommandAsync(setting.ApplyCommand);
-                    
+
+                    case SettingType.AppRemoval:
+                        // Store/Appx removal runs PowerShell; Win32/OEM uninstall runs its command line.
+                        return string.IsNullOrEmpty(setting.AppxName)
+                            ? await RunCommandAsync(setting.ApplyCommand)
+                            : await RunPowerShellAsync(setting.ApplyCommand);
+
                     default:
                         return false;
                 }
@@ -133,6 +141,30 @@ namespace AtlantHarden.Services
                         // Status wasn't properly set, mark as unknown
                         setting.CurrentValue = "Not Configured";
                         setting.IsApplied = false;
+                    }
+                    return;
+                }
+
+                // For App Removal (bloatware): "applied" means the app is gone.
+                if (setting.Type == SettingType.AppRemoval)
+                {
+                    if (!string.IsNullOrEmpty(setting.VerifyRegistryPath))
+                    {
+                        // Win32/OEM: the Uninstall key disappears when the program is removed.
+                        bool installed = RegistryService.KeyExists(setting.VerifyRegistryPath);
+                        setting.IsApplied = !installed;
+                        setting.CurrentValue = installed ? "Installed" : "Removed";
+                    }
+                    else if (!_appStatusLoaded)
+                    {
+                        setting.CurrentValue = "Pending...";
+                        setting.IsApplied = false;
+                    }
+                    else
+                    {
+                        bool installed = _installedAppx.Contains(setting.AppxName);
+                        setting.IsApplied = !installed;
+                        setting.CurrentValue = installed ? "Installed" : "Removed";
                     }
                     return;
                 }
@@ -330,6 +362,9 @@ namespace AtlantHarden.Services
             await CheckASRStatusAsync(asrProgress);
             current = asrCount;
 
+            // Refresh installed-Appx list so bloatware "Installed/Removed" status is accurate.
+            await RefreshInstalledAppxAsync();
+
             // Phase 2: Check registry-based settings
             progress?.Report((current, total, "Phase 2/2: Checking registry settings..."));
             
@@ -482,6 +517,68 @@ namespace AtlantHarden.Services
             {
                 return false;
             }
+        }
+
+        private async Task<string> RunPowerShellCaptureAsync(string command)
+        {
+            try
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "powershell.exe",
+                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                };
+
+                using var process = Process.Start(psi);
+                if (process == null) return string.Empty;
+
+                // Guard against a hung child (e.g. Get-AppxPackage stalling) freezing startup/refresh.
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(45));
+                var readTask = process.StandardOutput.ReadToEndAsync();
+                try
+                {
+                    await process.WaitForExitAsync(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    try { process.Kill(true); } catch { }
+                    return string.Empty;
+                }
+                return await readTask;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Refresh the cache of installed Appx package names (all users), used to detect whether
+        /// a bloatware Store app is still present. Best-effort: on failure the cache is left as-is,
+        /// and the load flag is set either way so status stops showing "Pending...".
+        /// </summary>
+        private async Task RefreshInstalledAppxAsync()
+        {
+            try
+            {
+                var output = await RunPowerShellCaptureAsync(
+                    "Get-AppxPackage -AllUsers | ForEach-Object { $_.Name }");
+                if (!string.IsNullOrWhiteSpace(output))
+                {
+                    _installedAppx.Clear();
+                    foreach (var line in output.Split('\n'))
+                    {
+                        var n = line.Trim();
+                        if (n.Length > 0) _installedAppx.Add(n);
+                    }
+                }
+            }
+            catch { /* leave cache as-is */ }
+            _appStatusLoaded = true;
         }
 
         private async Task<bool> RunCommandAsync(string command)
@@ -1912,6 +2009,113 @@ namespace AtlantHarden.Services
                     IsStig = true,
                     StigId = "WN11-CC-000175",
                     Tags = new[] { "inventory", "privacy", "telemetry", "stig" }
+                },
+
+                // ---- "Tighten Up Privacy" additions ----
+                new HardeningSetting
+                {
+                    Id = "PRIV_ActivityHistory",
+                    Name = "Disable Activity History (Timeline)",
+                    Description = "Stop Windows from collecting your activity history / Timeline",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\System",
+                    RegistryKey = "EnableActivityFeed",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 0,
+                    DefaultValue = 1,
+                    Tags = new[] { "activity-history", "timeline", "privacy" }
+                },
+                new HardeningSetting
+                {
+                    Id = "PRIV_TailoredExperiences",
+                    Name = "Disable Tailored Experiences",
+                    Description = "Stop Windows using diagnostic data to show personalized tips, ads, and recommendations",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent",
+                    RegistryKey = "DisableTailoredExperiencesWithDiagnosticData",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 1,
+                    DefaultValue = 0,
+                    Tags = new[] { "tailored-experiences", "privacy", "telemetry" }
+                },
+                new HardeningSetting
+                {
+                    Id = "PRIV_SilentAppInstall",
+                    Name = "Stop Auto-Installing Promoted Apps",
+                    Description = "Prevent Windows from silently installing sponsored apps (Candy Crush, TikTok, etc.)",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+                    RegistryKey = "SilentInstalledAppsEnabled",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 0,
+                    DefaultValue = 1,
+                    Tags = new[] { "content-delivery", "bloatware", "privacy" }
+                },
+                new HardeningSetting
+                {
+                    Id = "PRIV_StartSuggestions",
+                    Name = "Disable Start Menu Suggestions",
+                    Description = "Turn off suggested apps and promoted content in the Start menu",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+                    RegistryKey = "SystemPaneSuggestionsEnabled",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 0,
+                    DefaultValue = 1,
+                    Tags = new[] { "content-delivery", "start-menu", "privacy" }
+                },
+                new HardeningSetting
+                {
+                    Id = "PRIV_SettingsSuggestions",
+                    Name = "Disable Suggested Content in Settings",
+                    Description = "Turn off tips and suggested content shown inside the Settings app",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+                    RegistryKey = "SubscribedContent-338393Enabled",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 0,
+                    DefaultValue = 1,
+                    Tags = new[] { "content-delivery", "settings", "privacy" }
+                },
+                new HardeningSetting
+                {
+                    Id = "PRIV_AppLaunchTracking",
+                    Name = "Disable App-Launch Tracking",
+                    Description = "Stop Windows tracking app launches to personalize Start and search results",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+                    RegistryKey = "Start_TrackProgs",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 0,
+                    DefaultValue = 1,
+                    Tags = new[] { "tracking", "start-menu", "privacy" }
+                },
+                new HardeningSetting
+                {
+                    Id = "PRIV_FeedbackNotifications",
+                    Name = "Disable Feedback Notifications",
+                    Description = "Stop Windows from periodically asking for feedback",
+                    Category = SettingCategory.Privacy,
+                    Type = SettingType.Registry,
+                    Risk = RiskLevel.Low,
+                    RegistryPath = @"HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+                    RegistryKey = "DoNotShowFeedbackNotifications",
+                    RegistryValueType = "REG_DWORD",
+                    RecommendedValue = 1,
+                    DefaultValue = 0,
+                    Tags = new[] { "feedback", "telemetry", "privacy" }
                 }
             });
 
@@ -2272,6 +2476,10 @@ namespace AtlantHarden.Services
             
             // Add ACSC (Australian Cyber Security Centre) hardening settings
             settings.AddRange(ACSCSettings.GetAllSettings());
+
+            // Add Bloatware / cleanup (curated Store bloat + detected OEM/AV bloat). These are a
+            // separate, review-first cleanup action — excluded from the security profiles and score.
+            settings.AddRange(BloatwareSettings.GetAllSettings());
 
             // Merge the DISA STIG catalog (Windows 11, Edge, Chrome, Firefox, Office 365).
             // The external JSON catalog is authoritative for STIG identity. To avoid duplicate

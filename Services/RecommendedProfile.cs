@@ -199,6 +199,11 @@ namespace AtlantHarden.Services
                 case SettingCategory.Privacy:
                     return false;
 
+                // Bloatware removal is a destructive, review-first cleanup action — never part
+                // of an automatically-applied security profile.
+                case SettingCategory.Bloatware:
+                    return false;
+
                 // Windows Defender core protections (minus the brittle/privacy ones).
                 case SettingCategory.WindowsDefender:
                     return !MatchesAny(s.Name, DefenderExcludedNameFragments);

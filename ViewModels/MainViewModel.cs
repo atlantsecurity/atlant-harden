@@ -50,9 +50,12 @@ namespace AtlantHarden.ViewModels
                 // Check all settings including ASR rules
                 await _hardeningService.CheckAllStatusAsync(progress);
 
-                // Initialize toggle state to match current applied state (first load only)
+                // Initialize toggle state to match current applied state (first load only).
+                // Skip Bloatware: its selection is curated (clearly-junk pre-checked), and
+                // IsApplied for a removal is backwards (installed = not-yet-removed).
                 foreach (var setting in _hardeningService.GetAllSettings())
                 {
+                    if (setting.Category == SettingCategory.Bloatware) continue;
                     setting.IsEnabled = setting.IsApplied;
                 }
 
@@ -203,8 +206,10 @@ namespace AtlantHarden.ViewModels
         public bool IsShowingBasic => _shownProfile == "Basic";
 
         // Dashboard Properties
-        public int TotalSettingsCount => _hardeningService.GetAllSettings().Count;
-        public int AppliedSettingsCount => _hardeningService.GetAllSettings().Count(s => s.IsApplied);
+        // Bloatware removal is a separate cleanup action, not a security control, so it is
+        // excluded from the security score (removing Candy Crush shouldn't move a security %).
+        public int TotalSettingsCount => _hardeningService.GetAllSettings().Count(s => s.Category != SettingCategory.Bloatware);
+        public int AppliedSettingsCount => _hardeningService.GetAllSettings().Count(s => s.Category != SettingCategory.Bloatware && s.IsApplied);
         
         public int SecurityScore
         {
@@ -284,7 +289,7 @@ namespace AtlantHarden.ViewModels
         // Profile Counts
         public int BasicProfileCount => GetBasicProfileSettings().Count;
         public int RecommendedProfileCount => GetRecommendedProfileSettings().Count;
-        public int MaximumProfileCount => _hardeningService.GetAllSettings().Count;
+        public int MaximumProfileCount => _hardeningService.GetAllSettings().Count(s => s.Category != SettingCategory.Bloatware);
 
         // How much of each profile is already in place (applied) vs. still missing.
         public int BasicAppliedCount => GetBasicProfileSettings().Count(s => s.IsApplied);
@@ -405,6 +410,8 @@ namespace AtlantHarden.ViewModels
         public ICommand ApplyBasicProfileCommand { get; private set; } = null!;
         public ICommand ApplyRecommendedCommand { get; private set; } = null!;
         public ICommand ApplyMaximumProfileCommand { get; private set; } = null!;
+        public ICommand TightenPrivacyCommand { get; private set; } = null!;
+        public ICommand CleanUpBloatCommand { get; private set; } = null!;
         public ICommand ExportReportCommand { get; private set; } = null!;
         public ICommand OpenSystemRestoreCommand { get; private set; } = null!;
         
@@ -438,6 +445,8 @@ namespace AtlantHarden.ViewModels
             ApplyBasicProfileCommand = new AsyncRelayCommand(ApplyBasicProfileAsync, () => !IsProcessing);
             ApplyRecommendedCommand = new AsyncRelayCommand(ApplyRecommendedProfileAsync, () => !IsProcessing);
             ApplyMaximumProfileCommand = new AsyncRelayCommand(ApplyMaximumProfileAsync, () => !IsProcessing);
+            TightenPrivacyCommand = new AsyncRelayCommand(TightenPrivacyAsync, () => !IsProcessing);
+            CleanUpBloatCommand = new RelayCommand(CleanUpBloat, () => !IsProcessing);
             ExportReportCommand = new RelayCommand(ExportSecurityReport);
             OpenSystemRestoreCommand = new RelayCommand(OpenSystemRestore);
             
@@ -495,11 +504,17 @@ namespace AtlantHarden.ViewModels
         {
             var allSettings = _hardeningService.GetAllSettings();
             var importedIds = new HashSet<string>(_importedSettingIds);
-            var settings = allSettings.Where(s => importedIds.Contains(s.Id)).ToList();
+            // Never uninstall apps from an imported configuration — bloatware removal is
+            // destructive and machine-specific, and only ever happens through interactive,
+            // review-first selection in the Bloatware category. A shared/reused config.json
+            // must not silently trigger removals the importer never reviewed.
+            var settings = allSettings
+                .Where(s => importedIds.Contains(s.Id) && s.Category != SettingCategory.Bloatware)
+                .ToList();
 
             if (settings.Count == 0)
             {
-                MessageBox.Show("No matching settings found for the imported configuration.", 
+                MessageBox.Show("No matching settings found for the imported configuration.",
                     "Import Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 ClearImportedSettings();
                 return;
@@ -533,7 +548,7 @@ namespace AtlantHarden.ViewModels
 
         private async Task ApplyMaximumProfileAsync()
         {
-            var highRiskCount = _hardeningService.GetAllSettings().Count(s => s.Risk == RiskLevel.High);
+            var highRiskCount = _hardeningService.GetAllSettings().Count(s => s.Category != SettingCategory.Bloatware && s.Risk == RiskLevel.High);
             
             var result = MessageBox.Show(
                 "⚠️ MAXIMUM SECURITY PROFILE\n\n" +
@@ -557,8 +572,48 @@ namespace AtlantHarden.ViewModels
 
             if (result != MessageBoxResult.Yes) return;
 
-            var settings = _hardeningService.GetAllSettings();
+            // Maximum = all security settings, but NOT bloatware removal (that's a separate,
+            // review-first action reached from the Bloatware category / "Clean Up Bloat" button).
+            var settings = _hardeningService.GetAllSettings()
+                .Where(s => s.Category != SettingCategory.Bloatware)
+                .ToList();
             await ApplyProfileAsync(settings, "Maximum");
+        }
+
+        private async Task TightenPrivacyAsync()
+        {
+            // One-click "Tighten Up Privacy": apply every Privacy-category control (telemetry,
+            // advertising ID, activity history, tailored experiences, suggested content, etc.).
+            // Low-risk and reversible; a backup is still created first.
+            var settings = _hardeningService.GetAllSettings()
+                .Where(s => s.Category == SettingCategory.Privacy)
+                .ToList();
+            await ApplyProfileAsync(settings, "Privacy");
+        }
+
+        private void CleanUpBloat()
+        {
+            // Bloat removal is destructive, so nothing is checked at rest. Clicking this button
+            // IS the explicit intent to clean up: pre-select the "recommended" items that are
+            // still installed (clearly-junk Store apps + detected OEM/AV trials), leave the
+            // debatable ones (Xbox, Teams, Phone Link, vendor update tools) unchecked, then route
+            // to the Bloatware category so the user reviews, adjusts, and applies.
+            var category = Categories.FirstOrDefault(c => c.Category == SettingCategory.Bloatware);
+            if (category == null) { CurrentView = "Settings"; return; }
+
+            var bloat = _hardeningService.GetAllSettings()
+                .Where(s => s.Category == SettingCategory.Bloatware).ToList();
+            foreach (var s in bloat) _hardeningService.CheckCurrentStatus(s);
+
+            // Seed the default selection (still-installed "recommended" junk) only when nothing is
+            // already checked. If the user has a selection in progress they've curated this list —
+            // don't clobber a deliberate deselection when they re-open Clean Up Bloat.
+            if (!bloat.Any(s => s.IsEnabled))
+            {
+                foreach (var s in bloat)
+                    s.IsEnabled = !s.IsApplied && s.Tags.Contains("recommended");
+            }
+            SelectCategory(category);
         }
 
         private async Task ApplyProfileAsync(List<HardeningSetting> settings, string profileName)
@@ -583,6 +638,12 @@ namespace AtlantHarden.ViewModels
                 "Maximum" =>
                     "Applies EVERYTHING, including strict DISA STIG lockdowns that WILL add friction\n" +
                     "(password managers off, InPrivate disabled, Controlled Folder Access, etc.).\n\n",
+                "Privacy" =>
+                    "Tightens Windows privacy — all reversible and safe for daily use:\n" +
+                    "  • Turns off telemetry / diagnostic data and the advertising ID\n" +
+                    "  • Disables activity history and app-launch tracking\n" +
+                    "  • Turns off tailored experiences and suggested / \"recommended\" content\n" +
+                    "    in Start, Settings, and File Explorer\n\n",
                 _ => string.Empty
             };
 
@@ -796,7 +857,11 @@ namespace AtlantHarden.ViewModels
         private void LoadAllSettings()
         {
             CurrentSettings.Clear();
-            var items = _hardeningService.GetAllSettings().ToList();
+            // Bloatware removal lives only in its own category (sidebar or the "Clean Up Bloat"
+            // button) — keep the destructive uninstalls out of the general "all settings" list.
+            var items = _hardeningService.GetAllSettings()
+                .Where(s => s.Category != SettingCategory.Bloatware)
+                .ToList();
             foreach (var setting in items)
                 _hardeningService.CheckCurrentStatus(setting);
             foreach (var setting in SortForReview(items))
@@ -808,7 +873,7 @@ namespace AtlantHarden.ViewModels
         {
             "Basic" => RecommendedProfile.IsEssential(s),
             "Recommended" => RecommendedProfile.IsRecommended(s),
-            _ => true   // Maximum / unknown = everything
+            _ => s.Category != SettingCategory.Bloatware   // Maximum = all security settings, not bloatware cleanup
         };
 
         private void LoadProfileSettings(string profile)
@@ -859,10 +924,13 @@ namespace AtlantHarden.ViewModels
             baseSettings = _shownProfile != null
                 ? _hardeningService.GetAllSettings().Where(s => InProfile(s, _shownProfile))
                 : _isShowingAllSettings
-                    ? _hardeningService.GetAllSettings()
+                    // Keep bloatware/AppRemoval out of "All Settings" even when a search or risk
+                    // filter is active — same exclusion LoadAllSettings() applies — so a user can't
+                    // Select All + Apply destructive uninstalls from the general settings screen.
+                    ? _hardeningService.GetAllSettings().Where(s => s.Category != SettingCategory.Bloatware)
                     : (SelectedCategory != null
                         ? _hardeningService.GetSettingsByCategory(SelectedCategory.Category)
-                        : _hardeningService.GetAllSettings());
+                        : _hardeningService.GetAllSettings().Where(s => s.Category != SettingCategory.Bloatware));
 
             var filtered = baseSettings;
 
@@ -919,7 +987,11 @@ namespace AtlantHarden.ViewModels
             // This ensures settings modified in other categories are not lost when switching views
             var allSettings = _hardeningService.GetAllSettings();
             var settingsToApply = allSettings.Where(s => s.IsEnabled && !s.IsApplied).ToList();
-            var settingsToDisable = allSettings.Where(s => !s.IsEnabled && s.IsApplied).ToList();
+            // Bloatware removal isn't a reversible toggle — you can't "un-remove" an app — so an
+            // already-removed bloat item that's unchecked must NOT be treated as "disable/revert"
+            // (otherwise it would show up as a change to revert on every single Apply).
+            var settingsToDisable = allSettings.Where(s => !s.IsEnabled && s.IsApplied
+                                                           && s.Category != SettingCategory.Bloatware).ToList();
             
             int totalChanges = settingsToApply.Count + settingsToDisable.Count;
 
@@ -1387,8 +1459,14 @@ namespace AtlantHarden.ViewModels
                     var status = setting.IsApplied ? "<span class='applied'>✓ Applied</span>" : "<span class='not-applied'>✗ Not Applied</span>";
                     var risk = $"<span class='badge {setting.Risk.ToString().ToLower()}'>{setting.Risk}</span>";
                     
-                    sb.AppendLine($"<tr><td><strong>{setting.Name}</strong><br/><small style='color:#8b949e'>{setting.Description}</small></td>");
-                    sb.AppendLine($"<td>{risk}</td><td>{status}</td><td><code>{setting.CurrentValue}</code></td></tr>");
+                    // HTML-encode setting-supplied text — some of it (e.g. an OEM app's registry
+                    // DisplayName) is not fully under our control, so it must not inject markup
+                    // into the auto-opened report.
+                    var name = System.Net.WebUtility.HtmlEncode(setting.Name);
+                    var desc = System.Net.WebUtility.HtmlEncode(setting.Description);
+                    var cur = System.Net.WebUtility.HtmlEncode(setting.CurrentValue);
+                    sb.AppendLine($"<tr><td><strong>{name}</strong><br/><small style='color:#8b949e'>{desc}</small></td>");
+                    sb.AppendLine($"<td>{risk}</td><td>{status}</td><td><code>{cur}</code></td></tr>");
                 }
                 
                 sb.AppendLine("</table>");
@@ -1533,8 +1611,12 @@ namespace AtlantHarden.ViewModels
         /// </summary>
         public async Task ApplyAllEnabledAsync()
         {
-            var enabledSettings = _hardeningService.GetAllSettings().Where(s => s.IsEnabled).ToList();
-            
+            // Silent CLI automation (--config --apply --silent) runs with no confirmation dialog,
+            // so it must NEVER uninstall apps. Bloatware removal is destructive and machine-specific
+            // and only ever happens through interactive, review-first selection.
+            var enabledSettings = _hardeningService.GetAllSettings()
+                .Where(s => s.IsEnabled && s.Category != SettingCategory.Bloatware).ToList();
+
             if (enabledSettings.Count == 0)
                 return;
 

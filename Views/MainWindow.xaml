@@ -515,9 +515,61 @@
 
                     </Grid>
 
+                    <!-- Cleanup & Privacy quick actions -->
+                    <TextBlock Text="Cleanup &amp; Privacy" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#F0F6FC" Margin="0,20,0,12"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Tighten Up Privacy -->
+                        <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,4,0" Padding="16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#1A8764B8" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="👁️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Tighten Up Privacy" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Turn off telemetry, ad ID, activity history &amp; suggested content" FontSize="11" Foreground="#8B949E" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
+                                        Command="{Binding TightenPrivacyCommand}"
+                                        VerticalAlignment="Center" Padding="18,8" Margin="10,0,0,0"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Clean Up Bloat -->
+                        <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="4,0,0,0" Padding="16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="48" Height="48" CornerRadius="12" Background="#1A68768A" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="🗑️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Clean Up Bloat" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="Remove Store junk, games &amp; OEM/AV trials (McAfee, Norton…)" FontSize="11" Foreground="#8B949E" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Content="Review"
+                                        Command="{Binding CleanUpBloatCommand}"
+                                        VerticalAlignment="Center" Padding="18,8" Margin="10,0,0,0"/>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
                     <!-- Category Overview -->
-                    <TextBlock Text="Category Overview" FontSize="16" FontWeight="SemiBold" 
-                               Foreground="#F0F6FC" Margin="0,8,0,12"/>
+                    <TextBlock Text="Category Overview" FontSize="16" FontWeight="SemiBold"
+                               Foreground="#F0F6FC" Margin="0,20,0,12"/>
                     <ItemsControl ItemsSource="{Binding Categories}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
