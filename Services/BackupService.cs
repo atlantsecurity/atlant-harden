@@ -644,14 +644,21 @@ namespace AtlantHarden.Services
                 };
             }
 
-            return valueType.ToUpperInvariant() switch
+            try
             {
-                "REG_DWORD" => $"dword:{Convert.ToUInt32(value):x8}",
-                "REG_QWORD" => $"hex(b):{FormatQWord(Convert.ToUInt64(value))}",
-                "REG_BINARY" when value is byte[] bytes => $"hex:{FormatBinary(bytes)}",
-                "REG_EXPAND_SZ" => $"hex(2):{FormatExpandString(value.ToString() ?? "")}",
-                _ => $"\"{EscapeRegString(value.ToString() ?? "")}\""
-            };
+                return valueType.ToUpperInvariant() switch
+                {
+                    "REG_DWORD" => $"dword:{Convert.ToUInt32(value):x8}",
+                    "REG_QWORD" => $"hex(b):{FormatQWord(Convert.ToUInt64(value))}",
+                    "REG_BINARY" when value is byte[] bytes => $"hex:{FormatBinary(bytes)}",
+                    "REG_EXPAND_SZ" => $"hex(2):{FormatExpandString(value.ToString() ?? "")}",
+                    _ => $"\"{EscapeRegString(value.ToString() ?? "")}\""
+                };
+            }
+            catch
+            {
+                return $"dword:{Convert.ToInt32(value):x8}";
+            }
         }
 
         private string FormatQWord(ulong value)
