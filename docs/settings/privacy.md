@@ -4,7 +4,7 @@
 
 _Reduces the data Windows sends to Microsoft and third parties — telemetry, advertising ID, location, Cortana/Bing and consumer "suggestions". These are privacy improvements rather than anti-malware controls, which is why they are excluded from the Recommended profile._
 
-**12 settings** on this page &mdash; **0** are part of the Recommended profile.
+**19 settings** on this page &mdash; **0** are part of the Recommended profile.
 
 ### Block Language List Access
 
@@ -27,11 +27,25 @@ Disable location services for apps
 - **Change:** Sets `HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\Location` = `Deny` (REG_SZ)
 - **Risk:** Low  &middot;  **Profile:** Maximum-only
 
+### Disable Activity History (Timeline)
+
+Stop Windows from collecting your activity history / Timeline
+
+- **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Windows\System\EnableActivityFeed` = `0` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
 ### Disable Advertising ID
 
 Disable the unique advertising ID for this device
 
 - **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Windows\AdvertisingInfo\DisabledByGroupPolicy` = `1` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
+### Disable App-Launch Tracking
+
+Stop Windows tracking app launches to personalize Start and search results
+
+- **Change:** Sets `HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Start_TrackProgs` = `0` (REG_DWORD)
 - **Risk:** Low  &middot;  **Profile:** Maximum-only
 
 ### Disable Bing Search
@@ -55,6 +69,13 @@ Disable Microsoft consumer features and suggestions
 Disable Cortana consent and suggestions
 
 - **Change:** Sets `HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Search\CortanaConsent` = `0` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
+### Disable Feedback Notifications
+
+Stop Windows from periodically asking for feedback
+
+- **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection\DoNotShowFeedbackNotifications` = `1` (REG_DWORD)
 - **Risk:** Low  &middot;  **Profile:** Maximum-only
 
 ### Disable GameDVR
@@ -89,6 +110,27 @@ Disable synchronization of Windows settings to cloud
 - **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Windows\SettingSync\DisableSettingSync` = `2` (REG_DWORD)
 - **Risk:** Low  &middot;  **Profile:** Maximum-only
 
+### Disable Start Menu Suggestions
+
+Turn off suggested apps and promoted content in the Start menu
+
+- **Change:** Sets `HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager\SystemPaneSuggestionsEnabled` = `0` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
+### Disable Suggested Content in Settings
+
+Turn off tips and suggested content shown inside the Settings app
+
+- **Change:** Sets `HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager\SubscribedContent-338393Enabled` = `0` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
+### Disable Tailored Experiences
+
+Stop Windows using diagnostic data to show personalized tips, ads, and recommendations
+
+- **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent\DisableTailoredExperiencesWithDiagnosticData` = `1` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
 ### Disable Telemetry
 
 Set Windows telemetry to security only level
@@ -96,6 +138,13 @@ Set Windows telemetry to security only level
 *Why it matters:* Some features may communicate with the vendor, sending system information or downloading data or components for the feature. Limiting this capability will prevent potentially sensitive information from being sent outside the enterprise. The "Security" option for Telemetry configures the lowest amoun…
 
 - **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection\AllowTelemetry` = `0` (REG_DWORD)
+- **Risk:** Low  &middot;  **Profile:** Maximum-only
+
+### Stop Auto-Installing Promoted Apps
+
+Prevent Windows from silently installing sponsored apps (Candy Crush, TikTok, etc.)
+
+- **Change:** Sets `HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager\SilentInstalledAppsEnabled` = `0` (REG_DWORD)
 - **Risk:** Low  &middot;  **Profile:** Maximum-only
 
 

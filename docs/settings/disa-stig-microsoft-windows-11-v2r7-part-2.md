@@ -346,7 +346,7 @@ Allowing Windows apps to be activated by voice from the lock screen could allow 
 
 Use of weak or untested encryption algorithms undermines the purposes of utilizing encryption to protect data. By default Windows uses ECC curves with shorter key lengths first. Requiring ECC curves with longer key lengths to be prioritized first helps ensure more secure algorithms are used.
 
-- **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002\EccCurves` = `NistP384;NistP256` (REG_MULTI_SZ)
+- **Change:** Sets `HKLM\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002\EccCurves` = `NistP384 NistP256` (REG_MULTI_SZ)
 - **Risk:** Medium  &middot;  **Profile:** Recommended  &middot;  **STIG:** WN11-CC-000052 (Vuln V-253363)
 
 ### Windows 11 must cover or disable the built-in or attached camera when not in use.
