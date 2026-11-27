@@ -31,164 +31,210 @@ namespace AtlantHarden.Services
         public string BackupDirectory => _backupDirectory;
 
         /// <summary>
-        /// Creates a backup of current registry values BEFORE applying changes
+        /// Creates a backup of the current state of every setting about to change (being enabled
+        /// OR disabled), BEFORE the change is made. Registry values are recorded exactly (primary
+        /// path and every mirror path). Non-registry settings (Defender preferences, ASR rules,
+        /// firewall/audit policy, file associations, commands) record whether they were applied,
+        /// so a restore can re-apply or revert them through the same apply/revert code paths.
         /// </summary>
-        public async Task<BackupInfo> CreateBackupAsync(List<HardeningSetting> settings, string description = "")
+        public async Task<BackupInfo> CreateBackupAsync(List<HardeningSetting> settings, string label = "")
         {
-            var enabledSettings = settings.Where(s => s.IsEnabled && s.Type == SettingType.Registry).ToList();
-            
-            var backupInfo = new BackupInfo
-            {
-                Description = string.IsNullOrEmpty(description) 
-                    ? $"Backup before applying {enabledSettings.Count} settings"
-                    : description,
-                AppliedCategories = enabledSettings
-                    .Select(s => s.Category.ToString())
-                    .Distinct()
-                    .ToList()
-            };
+            var changed = settings.ToList();
+            var now = DateTime.Now;
+            bool isBaseline = !Directory.EnumerateFiles(_backupDirectory, $"*{BackupFileExtension}").Any();
 
             var backupData = new BackupData
             {
-                CreatedAt = DateTime.Now,
+                CreatedAt = now,
                 ComputerName = Environment.MachineName,
                 WindowsVersion = Environment.OSVersion.ToString(),
+                Label = label,
+                IsBaseline = isBaseline,
                 RegistryEntries = new List<RegistryBackupEntry>(),
+                StateEntries = new List<SettingStateEntry>(),
                 AppliedSettingIds = new List<string>()
             };
 
-            // Backup registry entries for ALL enabled settings
-            foreach (var setting in enabledSettings)
+            foreach (var setting in changed)
             {
-                if (string.IsNullOrEmpty(setting.RegistryPath) || string.IsNullOrEmpty(setting.RegistryKey))
-                    continue;
-
-                var keyExists = RegistryService.KeyExists(setting.RegistryPath);
-                var valueExists = keyExists && RegistryService.ValueExists(setting.RegistryPath, setting.RegistryKey);
-                object? originalValue = null;
-                string originalValueType = setting.RegistryValueType ?? "REG_DWORD";
-
-                if (valueExists)
-                {
-                    originalValue = RegistryService.ReadValue(setting.RegistryPath, setting.RegistryKey);
-                    var kind = RegistryService.GetValueKind(setting.RegistryPath, setting.RegistryKey);
-                    originalValueType = RegistryService.ValueKindToString(kind);
-                }
-
-                var entry = new RegistryBackupEntry
-                {
-                    Path = setting.RegistryPath,
-                    KeyName = setting.RegistryKey,
-                    ValueType = originalValueType,
-                    KeyExisted = keyExists,
-                    ValueExisted = valueExists,
-                    OriginalValue = originalValue,
-                    NewValue = setting.RecommendedValue,
-                    SettingId = setting.Id,
-                    SettingName = setting.Name
-                };
-                
-                backupData.RegistryEntries.Add(entry);
                 backupData.AppliedSettingIds.Add(setting.Id);
+
+                if (setting.Type == SettingType.Registry
+                    && !string.IsNullOrEmpty(setting.RegistryPath) && !string.IsNullOrEmpty(setting.RegistryKey))
+                {
+                    var paths = new List<string> { setting.RegistryPath };
+                    if (setting.MirrorRegistryPaths != null) paths.AddRange(setting.MirrorRegistryPaths);
+                    foreach (var path in paths)
+                        backupData.RegistryEntries.Add(CaptureRegistryEntry(setting, path));
+                }
+                else
+                {
+                    backupData.StateEntries.Add(new SettingStateEntry
+                    {
+                        SettingId = setting.Id,
+                        SettingName = setting.Name,
+                        Type = setting.Type.ToString(),
+                        WasApplied = setting.IsApplied,
+                        PreviousValue = setting.CurrentValue
+                    });
+                }
             }
 
-            // Save backup file
-            var fileName = $"backup_{backupInfo.CreatedAt:yyyyMMdd_HHmmss}{BackupFileExtension}";
-            backupInfo.FilePath = Path.Combine(_backupDirectory, fileName);
-            
+            var stamp = $"{now:yyyyMMdd_HHmmss_fff}";
+            var fileName = $"backup_{stamp}{BackupFileExtension}";
+            var backupInfo = new BackupInfo
+            {
+                CreatedAt = now,
+                FilePath = Path.Combine(_backupDirectory, fileName),
+                IsBaseline = isBaseline,
+                Label = label,
+                SettingsCount = changed.Count,
+                Description = DescribeBackup(backupData),
+                AppliedCategories = changed.Select(s => s.Category.ToString()).Distinct().ToList()
+            };
+
             var options = new JsonSerializerOptions { WriteIndented = true };
             var json = JsonSerializer.Serialize(backupData, options);
             await File.WriteAllTextAsync(backupInfo.FilePath, json);
-            
             backupInfo.FileSizeBytes = new FileInfo(backupInfo.FilePath).Length;
-            backupInfo.SettingsCount = backupData.RegistryEntries.Count;
 
-            // Export .reg file for manual restoration
-            var regFileName = $"restore_{backupInfo.CreatedAt:yyyyMMdd_HHmmss}.reg";
-            var regFilePath = Path.Combine(_backupDirectory, regFileName);
-            await ExportRestoreRegFileAsync(backupData, regFilePath);
-
-            // Also create a .reg file showing what was applied (for reference)
-            var appliedRegFileName = $"applied_{backupInfo.CreatedAt:yyyyMMdd_HHmmss}.reg";
-            var appliedRegFilePath = Path.Combine(_backupDirectory, appliedRegFileName);
-            await ExportAppliedRegFileAsync(backupData, appliedRegFilePath);
-
-            await CleanupOldBackupsAsync();
-
-            return backupInfo;
-        }
-
-        /// <summary>
-        /// Restore registry values from backup
-        /// </summary>
-        public async Task<(bool success, int restored, int failed, List<string> errors)> RestoreBackupAsync(string backupFilePath)
-        {
-            var errors = new List<string>();
-            int restored = 0;
-            int failed = 0;
-
+            // .reg files for manual restoration / reference. Never let a formatting problem in
+            // these convenience files block the backup (and therefore the whole apply).
             try
             {
-                var json = await File.ReadAllTextAsync(backupFilePath);
-                var backupData = JsonSerializer.Deserialize<BackupData>(json);
-                
-                if (backupData == null)
-                    return (false, 0, 0, new List<string> { "Could not read backup file" });
-
-                foreach (var entry in backupData.RegistryEntries)
-                {
-                    try
-                    {
-                        if (!entry.ValueExisted)
-                        {
-                            // Value didn't exist before - delete it to restore original state
-                            var deleted = RegistryService.DeleteValue(entry.Path, entry.KeyName);
-                            if (deleted)
-                            {
-                                restored++;
-                            }
-                            else
-                            {
-                                // It's okay if delete fails - might already not exist
-                                restored++;
-                            }
-                        }
-                        else if (entry.OriginalValue != null)
-                        {
-                            // Restore original value
-                            var valueKind = RegistryService.ParseValueKind(entry.ValueType);
-                            object valueToWrite = ConvertJsonElement(entry.OriginalValue, valueKind);
-                            
-                            var written = RegistryService.WriteValue(entry.Path, entry.KeyName, valueToWrite, valueKind);
-                            if (written)
-                            {
-                                restored++;
-                            }
-                            else
-                            {
-                                failed++;
-                                errors.Add($"Failed to restore: {entry.SettingName ?? entry.KeyName}");
-                            }
-                        }
-                        else
-                        {
-                            // Value existed but was null - unusual case
-                            restored++;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        failed++;
-                        errors.Add($"{entry.SettingName ?? entry.KeyName}: {ex.Message}");
-                    }
-                }
-
-                return (failed == 0, restored, failed, errors);
+                await ExportRestoreRegFileAsync(backupData, Path.Combine(_backupDirectory, $"restore_{stamp}.reg"));
+                await ExportAppliedRegFileAsync(backupData, Path.Combine(_backupDirectory, $"applied_{stamp}.reg"));
             }
             catch (Exception ex)
             {
-                return (false, 0, 0, new List<string> { ex.Message });
+                Debug.WriteLine($"[BackupService] .reg export failed: {ex.Message}");
             }
+
+            await CleanupOldBackupsAsync();
+            return backupInfo;
+        }
+
+        private static RegistryBackupEntry CaptureRegistryEntry(HardeningSetting setting, string path)
+        {
+            var keyExists = RegistryService.KeyExists(path);
+            var valueExists = keyExists && RegistryService.ValueExists(path, setting.RegistryKey);
+            object? originalValue = null;
+            string originalValueType = string.IsNullOrEmpty(setting.RegistryValueType) ? "REG_DWORD" : setting.RegistryValueType;
+
+            if (valueExists)
+            {
+                originalValue = RegistryService.ReadValue(path, setting.RegistryKey);
+                originalValueType = RegistryService.ValueKindToString(RegistryService.GetValueKind(path, setting.RegistryKey));
+            }
+
+            return new RegistryBackupEntry
+            {
+                Path = path,
+                KeyName = setting.RegistryKey,
+                ValueType = originalValueType,
+                KeyExisted = keyExists,
+                ValueExisted = valueExists,
+                OriginalValue = originalValue,
+                NewValue = setting.RecommendedValue,
+                NewValueType = string.IsNullOrEmpty(setting.RegistryValueType) ? "REG_DWORD" : setting.RegistryValueType,
+                SettingId = setting.Id,
+                SettingName = setting.Name
+            };
+        }
+
+        private static string DescribeBackup(BackupData data)
+        {
+            var what = string.IsNullOrWhiteSpace(data.Label) ? "Before applying changes" : $"Before: {data.Label}";
+            var count = data.AppliedSettingIds.Count > 0 ? data.AppliedSettingIds.Count : data.RegistryEntries.Count;
+            return $"{what} · {count} settings";
+        }
+
+        /// <summary>Result of restoring a backup.</summary>
+        public sealed record RestoreResult(bool Success, int Restored, int Failed, int Skipped, List<string> Errors, List<string> SkippedNames);
+
+        /// <summary>
+        /// Restore a backup: registry values are written back exactly (or deleted if they did not
+        /// exist), and non-registry settings are re-applied or reverted to their recorded state via
+        /// <paramref name="applyOrRevert"/>. App removals cannot be undone and are reported as skipped.
+        /// </summary>
+        public async Task<RestoreResult> RestoreBackupAsync(string backupFilePath,
+            IReadOnlyDictionary<string, HardeningSetting>? settingsById = null,
+            Func<HardeningSetting, bool, Task<bool>>? applyOrRevert = null)
+        {
+            var errors = new List<string>();
+            var skippedNames = new List<string>();
+            int restored = 0, failed = 0, skipped = 0;
+
+            BackupData? backupData;
+            try
+            {
+                var json = await File.ReadAllTextAsync(backupFilePath);
+                backupData = JsonSerializer.Deserialize<BackupData>(json);
+            }
+            catch (Exception ex)
+            {
+                return new RestoreResult(false, 0, 0, 0, new List<string> { ex.Message }, skippedNames);
+            }
+            if (backupData == null)
+                return new RestoreResult(false, 0, 0, 0, new List<string> { "Could not read backup file" }, skippedNames);
+
+            foreach (var entry in backupData.RegistryEntries)
+            {
+                try
+                {
+                    bool ok;
+                    if (!entry.ValueExisted)
+                    {
+                        // Value didn't exist before: delete it. A value that is already absent is fine.
+                        ok = RegistryService.DeleteValue(entry.Path, entry.KeyName)
+                             || !RegistryService.ValueExists(entry.Path, entry.KeyName);
+                    }
+                    else if (entry.OriginalValue != null)
+                    {
+                        var valueKind = RegistryService.ParseValueKind(entry.ValueType);
+                        ok = RegistryService.WriteValue(entry.Path, entry.KeyName,
+                            ConvertJsonElement(entry.OriginalValue, valueKind), valueKind);
+                    }
+                    else ok = true;
+
+                    if (ok) restored++;
+                    else { failed++; errors.Add($"Failed to restore: {entry.SettingName ?? entry.KeyName}"); }
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    errors.Add($"{entry.SettingName ?? entry.KeyName}: {ex.Message}");
+                }
+            }
+
+            foreach (var state in backupData.StateEntries ?? new List<SettingStateEntry>())
+            {
+                if (settingsById == null || applyOrRevert == null
+                    || !settingsById.TryGetValue(state.SettingId, out var setting))
+                {
+                    skipped++; skippedNames.Add(state.SettingName ?? state.SettingId);
+                    continue;
+                }
+                if (setting.Type == SettingType.AppRemoval)
+                {
+                    // An uninstalled app can't be put back automatically.
+                    if (!state.WasApplied && setting.IsApplied) { skipped++; skippedNames.Add(setting.Name + " (reinstall manually)"); }
+                    continue;
+                }
+                if (setting.IsApplied == state.WasApplied) { restored++; continue; }
+                try
+                {
+                    if (await applyOrRevert(setting, state.WasApplied)) restored++;
+                    else { failed++; errors.Add($"Failed to {(state.WasApplied ? "re-apply" : "revert")}: {setting.Name}"); }
+                }
+                catch (Exception ex)
+                {
+                    failed++;
+                    errors.Add($"{setting.Name}: {ex.Message}");
+                }
+            }
+
+            return new RestoreResult(failed == 0, restored, failed, skipped, errors, skippedNames);
         }
 
         /// <summary>
@@ -227,23 +273,31 @@ namespace AtlantHarden.Services
             }
         }
 
-        private object ConvertJsonElement(object value, RegistryValueKind kind)
+        /// <summary>
+        /// Convert a value read back from backup JSON to the CLR type the registry API expects.
+        /// byte[] is serialized by System.Text.Json as a base64 string; string[] as a JSON array.
+        /// </summary>
+        internal static object ConvertJsonElement(object value, RegistryValueKind kind)
         {
-            if (value is JsonElement element)
+            if (value is not JsonElement element) return value;
+            return kind switch
             {
-                return kind switch
+                RegistryValueKind.DWord => element.ValueKind == JsonValueKind.Number && element.TryGetInt64(out long d)
+                    ? unchecked((int)d) : 0,
+                RegistryValueKind.QWord => element.ValueKind == JsonValueKind.Number && element.TryGetInt64(out long q) ? q : 0L,
+                RegistryValueKind.String or RegistryValueKind.ExpandString =>
+                    element.ValueKind == JsonValueKind.String ? element.GetString() ?? "" : element.ToString(),
+                RegistryValueKind.MultiString => element.ValueKind == JsonValueKind.Array
+                    ? element.EnumerateArray().Select(e => e.GetString() ?? "").ToArray()
+                    : RegistryService.ToMultiString(element.ToString()),
+                RegistryValueKind.Binary => element.ValueKind switch
                 {
-                    RegistryValueKind.DWord => element.TryGetInt32(out int i) ? i : (element.TryGetInt64(out long l) ? (int)l : 0),
-                    RegistryValueKind.QWord => element.TryGetInt64(out long l64) ? l64 : 0L,
-                    RegistryValueKind.String => element.GetString() ?? "",
-                    RegistryValueKind.ExpandString => element.GetString() ?? "",
-                    RegistryValueKind.Binary => element.ValueKind == JsonValueKind.Array 
-                        ? element.EnumerateArray().Select(e => (byte)e.GetInt32()).ToArray() 
-                        : Array.Empty<byte>(),
-                    _ => element.ToString() ?? ""
-                };
-            }
-            return value;
+                    JsonValueKind.String => element.TryGetBytesFromBase64(out var b) ? b : Array.Empty<byte>(),
+                    JsonValueKind.Array => element.EnumerateArray().Select(e => (byte)e.GetInt32()).ToArray(),
+                    _ => Array.Empty<byte>()
+                },
+                _ => element.ToString()
+            };
         }
 
         public async Task<List<BackupInfo>> GetAllBackupsAsync()
@@ -269,8 +323,11 @@ namespace AtlantHarden.Services
                         {
                             FilePath = file,
                             CreatedAt = backupData.CreatedAt,
-                            Description = $"{backupData.RegistryEntries.Count} registry entries",
-                            SettingsCount = backupData.RegistryEntries.Count,
+                            Description = DescribeBackup(backupData),
+                            Label = backupData.Label,
+                            IsBaseline = backupData.IsBaseline,
+                            SettingsCount = backupData.AppliedSettingIds.Count > 0
+                                ? backupData.AppliedSettingIds.Count : backupData.RegistryEntries.Count,
                             FileSizeBytes = new FileInfo(file).Length,
                             AppliedCategories = backupData.RegistryEntries
                                 .Select(e => e.SettingName ?? e.KeyName)
@@ -516,7 +573,9 @@ namespace AtlantHarden.Services
         {
             try
             {
+                // Never prune the baseline (the very first backup = the PC's original state).
                 var files = Directory.GetFiles(_backupDirectory, $"*{BackupFileExtension}")
+                    .Where(f => !IsBaselineFile(f))
                     .OrderByDescending(f => File.GetCreationTime(f))
                     .Skip(MaxBackups)
                     .ToList();
@@ -529,6 +588,16 @@ namespace AtlantHarden.Services
             catch { }
         }
 
+        private static bool IsBaselineFile(string file)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(file));
+                return doc.RootElement.TryGetProperty("IsBaseline", out var b) && b.ValueKind == JsonValueKind.True;
+            }
+            catch { return false; }
+        }
+
         /// <summary>
         /// Export .reg file for RESTORING original values
         /// </summary>
@@ -539,6 +608,8 @@ namespace AtlantHarden.Services
             sb.AppendLine();
             sb.AppendLine("; AtlantHarden - RESTORE FILE");
             sb.AppendLine($"; Run this file to restore original values BEFORE hardening");
+            sb.AppendLine("; Registry values only. Defender/ASR, firewall, audit-policy and other non-registry");
+            sb.AppendLine("; changes are restored by the app's Restore button, not by this file.");
             sb.AppendLine($"; Created: {backupData.CreatedAt:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine($"; Computer: {backupData.ComputerName}");
             sb.AppendLine($"; Total entries: {backupData.RegistryEntries.Count}");
@@ -582,7 +653,7 @@ namespace AtlantHarden.Services
                 }
             }
 
-            await File.WriteAllTextAsync(filePath, sb.ToString());
+            await File.WriteAllTextAsync(filePath, sb.ToString(), Encoding.Unicode);
         }
 
         /// <summary>
@@ -612,13 +683,13 @@ namespace AtlantHarden.Services
                 
                 foreach (var entry in group)
                 {
-                    var valueStr = FormatRegValue(entry.NewValue, entry.ValueType);
+                    var valueStr = FormatRegValue(entry.NewValue, string.IsNullOrEmpty(entry.NewValueType) ? entry.ValueType : entry.NewValueType);
                     sb.AppendLine($"\"{entry.KeyName}\"={valueStr}");
                 }
                 sb.AppendLine();
             }
 
-            await File.WriteAllTextAsync(filePath, sb.ToString());
+            await File.WriteAllTextAsync(filePath, sb.ToString(), Encoding.Unicode);
         }
 
         private string ConvertToRegPath(string path)
@@ -626,32 +697,37 @@ namespace AtlantHarden.Services
             return path
                 .Replace("HKLM\\", "HKEY_LOCAL_MACHINE\\")
                 .Replace("HKCU\\", "HKEY_CURRENT_USER\\")
-                .Replace("HKCR\\", "HKEY_CLASSES_ROOT\\");
+                .Replace("HKCR\\", "HKEY_CLASSES_ROOT\\")
+                .Replace("HKU\\", "HKEY_USERS\\");
         }
 
-        private string FormatRegValue(object? value, string valueType)
+        internal string FormatRegValue(object? value, string valueType)
         {
             if (value == null) return "\"\"";
+            var type = valueType.ToUpperInvariant();
+            var kind = RegistryService.ParseValueKind(type);
 
-            // Handle JsonElement
-            if (value is JsonElement element)
+            // Values read back from backup JSON arrive as JsonElement.
+            if (value is JsonElement) value = ConvertJsonElement(value, kind);
+
+            switch (type)
             {
-                value = valueType.ToUpperInvariant() switch
-                {
-                    "REG_DWORD" => element.TryGetInt32(out int i) ? i : (element.TryGetInt64(out long l) ? (int)l : 0),
-                    "REG_QWORD" => element.TryGetInt64(out long l) ? l : 0L,
-                    _ => element.GetString() ?? element.ToString()
-                };
+                case "REG_DWORD":
+                    // Registry DWORDs read back as signed int (0xFFFFFFFF -> -1); keep the bit pattern.
+                    return $"dword:{unchecked((uint)Convert.ToInt64(value)):x8}";
+                case "REG_QWORD":
+                    return $"hex(b):{FormatQWord(unchecked((ulong)Convert.ToInt64(value)))}";
+                case "REG_BINARY":
+                    return value is byte[] bytes ? $"hex:{FormatBinary(bytes)}" : "hex:";
+                case "REG_EXPAND_SZ":
+                    return $"hex(2):{FormatExpandString(value.ToString() ?? "")}";
+                case "REG_MULTI_SZ":
+                    var parts = RegistryService.ToMultiString(value);
+                    var multi = Encoding.Unicode.GetBytes(string.Join("\0", parts) + "\0\0");
+                    return $"hex(7):{FormatBinary(multi)}";
+                default:
+                    return $"\"{EscapeRegString(value.ToString() ?? "")}\"";
             }
-
-            return valueType.ToUpperInvariant() switch
-            {
-                "REG_DWORD" => $"dword:{Convert.ToUInt32(value):x8}",
-                "REG_QWORD" => $"hex(b):{FormatQWord(Convert.ToUInt64(value))}",
-                "REG_BINARY" when value is byte[] bytes => $"hex:{FormatBinary(bytes)}",
-                "REG_EXPAND_SZ" => $"hex(2):{FormatExpandString(value.ToString() ?? "")}",
-                _ => $"\"{EscapeRegString(value.ToString() ?? "")}\""
-            };
         }
 
         private string FormatQWord(ulong value)
@@ -686,8 +762,21 @@ namespace AtlantHarden.Services
         public DateTime CreatedAt { get; set; }
         public string ComputerName { get; set; } = "";
         public string WindowsVersion { get; set; } = "";
+        public string Label { get; set; } = "";
+        public bool IsBaseline { get; set; }
         public List<RegistryBackupEntry> RegistryEntries { get; set; } = new();
+        public List<SettingStateEntry> StateEntries { get; set; } = new();
         public List<string> AppliedSettingIds { get; set; } = new();
+    }
+
+    /// <summary>Pre-change state of a non-registry setting (Defender, ASR, firewall, audit, command).</summary>
+    public class SettingStateEntry
+    {
+        public string SettingId { get; set; } = "";
+        public string? SettingName { get; set; }
+        public string Type { get; set; } = "";
+        public bool WasApplied { get; set; }
+        public string? PreviousValue { get; set; }
     }
 
     public class RegistryBackupEntry
@@ -699,6 +788,7 @@ namespace AtlantHarden.Services
         public bool ValueExisted { get; set; }
         public object? OriginalValue { get; set; }
         public object? NewValue { get; set; }
+        public string NewValueType { get; set; } = "";
         public string SettingId { get; set; } = "";
         public string? SettingName { get; set; }
     }

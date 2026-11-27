@@ -538,7 +538,7 @@ namespace AtlantHarden.ViewModels
                 setting.IsEnabled = true;
             }
 
-            await ApplySettingsAsync(settings);
+            await ApplySettingsAsync(settings, $"Imported config: {_importedProfileName}");
             UpdateDashboardProperties();
 
             // Clear the imported state after applying
@@ -671,7 +671,7 @@ namespace AtlantHarden.ViewModels
                 setting.IsEnabled = true;
             }
 
-            await ApplySettingsAsync(settings);
+            await ApplySettingsAsync(settings, $"{profileName} profile");
             UpdateDashboardProperties();
         }
 
@@ -1021,7 +1021,8 @@ namespace AtlantHarden.ViewModels
             await ApplySettingsWithStateAsync(settingsToApply, settingsToDisable);
         }
 
-        private async Task ApplySettingsWithStateAsync(List<HardeningSetting> toEnable, List<HardeningSetting> toDisable)
+        private async Task ApplySettingsWithStateAsync(List<HardeningSetting> toEnable, List<HardeningSetting> toDisable,
+            string label = "Apply Selected")
         {
             IsProcessing = true;
             ProgressValue = 0;
@@ -1036,7 +1037,7 @@ namespace AtlantHarden.ViewModels
                 if (allChangedSettings.Any())
                 {
                     StatusMessage = "Creating backup...";
-                    var backup = await _backupService.CreateBackupAsync(allChangedSettings);
+                    var backup = await _backupService.CreateBackupAsync(allChangedSettings, label);
                     Backups.Insert(0, backup);
                     OnPropertyChanged(nameof(HasNoBackups));
                 }
@@ -1183,10 +1184,10 @@ namespace AtlantHarden.ViewModels
             }
         }
 
-        private async Task ApplySettingsAsync(List<HardeningSetting> settings)
+        private async Task ApplySettingsAsync(List<HardeningSetting> settings, string label = "Apply Selected")
         {
             var toEnable = settings.Where(s => s.IsEnabled).ToList();
-            await ApplySettingsWithStateAsync(toEnable, new List<HardeningSetting>());
+            await ApplySettingsWithStateAsync(toEnable, new List<HardeningSetting>(), label);
         }
 
         private async Task LoadBackupsAsync()
@@ -1217,7 +1218,9 @@ namespace AtlantHarden.ViewModels
 
             var result = MessageBox.Show(
                 $"Restore backup from {backup.CreatedAt:MMM d, yyyy h:mm tt}?\n\n" +
-                $"This will revert {backup.SettingsCount} registry entries to their original values.\n\n" +
+                $"This will return {backup.SettingsCount} settings to the state they were in before that change " +
+                "(registry values, Defender/ASR, firewall, audit policy and file associations).\n" +
+                "Removed apps are not reinstalled.\n\n" +
                 "Note: Some changes may require a restart to take effect.",
                 "Confirm Restore",
                 MessageBoxButton.YesNo,
@@ -1230,25 +1233,40 @@ namespace AtlantHarden.ViewModels
 
             try
             {
-                var (success, restored, failed, errors) = await _backupService.RestoreBackupAsync(backup.FilePath);
-                
-                var message = $"Restored {restored} settings.";
-                if (failed > 0)
+                var byId = _hardeningService.GetAllSettings().GroupBy(s => s.Id).ToDictionary(g => g.Key, g => g.First());
+                var r = await _backupService.RestoreBackupAsync(backup.FilePath, byId,
+                    (s, enable) => _hardeningService.ApplyOrRevertSettingAsync(s, enable));
+
+                // Re-read real state, then line the toggles up with it so the next
+                // "Apply Selected" doesn't silently re-apply what was just rolled back.
+                StatusMessage = "Verifying restored state...";
+                await _hardeningService.RefreshASRStatusAsync();
+                await _hardeningService.CheckAllStatusAsync();
+                SyncTogglesToAppliedState();
+
+                var message = $"Restored {r.Restored} settings.";
+                if (r.Failed > 0)
                 {
-                    message += $"\n{failed} settings failed to restore.";
-                    if (errors.Any())
+                    message += $"\n{r.Failed} settings failed to restore.";
+                    if (r.Errors.Any())
                     {
-                        message += "\n\nErrors:\n" + string.Join("\n", errors.Take(5));
-                        if (errors.Count > 5)
-                            message += $"\n...and {errors.Count - 5} more";
+                        message += "\n\nErrors:\n" + string.Join("\n", r.Errors.Take(5));
+                        if (r.Errors.Count > 5)
+                            message += $"\n...and {r.Errors.Count - 5} more";
                     }
+                }
+                if (r.Skipped > 0)
+                {
+                    message += $"\n\n{r.Skipped} item(s) could not be restored automatically:\n  • "
+                             + string.Join("\n  • ", r.SkippedNames.Take(8));
+                    if (r.SkippedNames.Count > 8) message += $"\n  …and {r.SkippedNames.Count - 8} more";
                 }
                 message += "\n\nSome changes may require a restart.";
 
-                StatusMessage = success ? "Backup restored successfully" : "Restore completed with errors";
-                MessageBox.Show(message, success ? "Restore Complete" : "Restore Completed with Issues", 
-                    MessageBoxButton.OK, success ? MessageBoxImage.Information : MessageBoxImage.Warning);
-                
+                StatusMessage = r.Success ? "Backup restored successfully" : "Restore completed with errors";
+                MessageBox.Show(message, r.Success ? "Restore Complete" : "Restore Completed with Issues",
+                    MessageBoxButton.OK, r.Success ? MessageBoxImage.Information : MessageBoxImage.Warning);
+
                 UpdateDashboardProperties();
                 RefreshSettingsList();
             }
@@ -1260,6 +1278,14 @@ namespace AtlantHarden.ViewModels
             {
                 IsProcessing = false;
             }
+        }
+
+        /// <summary>Make every (non-bloatware) toggle match what is actually applied on the PC.</summary>
+        private void SyncTogglesToAppliedState()
+        {
+            foreach (var s in _hardeningService.GetAllSettings())
+                if (s.Category != SettingCategory.Bloatware)
+                    s.IsEnabled = s.IsApplied;
         }
 
         private async Task DeleteBackupAsync(object? parameter)
@@ -1630,7 +1656,7 @@ namespace AtlantHarden.ViewModels
             {
                 // Create backup first
                 StatusMessage = "Creating backup...";
-                await _backupService.CreateBackupAsync(enabledSettings);
+                await _backupService.CreateBackupAsync(enabledSettings, "Command-line apply");
 
                 int applied = 0;
                 int failed = 0;
