@@ -272,10 +272,18 @@
                                 <TextBlock Text="{Binding SecurityLevel}" FontSize="14" 
                                            Foreground="{Binding SecurityScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,12"/>
                                 <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="12" LineHeight="18">
-                                    <Run Text="{Binding AppliedSettingsCount, Mode=OneWay}"/>
+                                    <Run Text="{Binding ScoreAppliedCount, Mode=OneWay}"/>
                                     <Run Text=" of "/>
-                                    <Run Text="{Binding TotalSettingsCount, Mode=OneWay}"/>
-                                    <Run Text=" security settings are currently applied to your system."/>
+                                    <Run Text="{Binding ScoreTotalCount, Mode=OneWay}"/>
+                                    <Run Text=" Recommended protections are on. The score measures the Recommended profile only."/>
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Foreground="#6E7681" FontSize="11" Margin="0,6,0,0"
+                                           ToolTip="Strict lockdowns from the Maximum profile. They add friction and can break apps, so they don't count toward your score.">
+                                    <Run Text="Optional extra lockdown (Maximum only): "/>
+                                    <Run Text="{Binding ExtraLockdownAppliedCount, Mode=OneWay}"/>
+                                    <Run Text=" of "/>
+                                    <Run Text="{Binding ExtraLockdownTotalCount, Mode=OneWay}"/>
+                                    <Run Text=" — not needed for a full score."/>
                                 </TextBlock>
                             </StackPanel>
 

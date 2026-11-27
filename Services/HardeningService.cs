@@ -145,8 +145,21 @@ namespace AtlantHarden.Services
             }
         }
 
-        public void CheckCurrentStatus(HardeningSetting setting)
+        /// <summary>
+        /// Refresh one setting's applied state. Registry reads are cheap and always done; checks
+        /// that start a process (firewall, audit policy, script validation) only run when
+        /// <paramref name="includeSlowChecks"/> is true (the background full refresh) or the
+        /// setting has never been checked — otherwise the last result is kept, so views,
+        /// search and the dashboard never stall the UI thread.
+        /// </summary>
+        public void CheckCurrentStatus(HardeningSetting setting, bool includeSlowChecks = false)
         {
+            bool isSlow = setting.Type is SettingType.Firewall or SettingType.AuditPolicy
+                          || (setting.Type != SettingType.Registry && string.IsNullOrEmpty(setting.VerifyRegistryPath)
+                              && !string.IsNullOrEmpty(setting.ValidationCommand));
+            if (isSlow && !includeSlowChecks && !string.IsNullOrEmpty(setting.CurrentValue))
+                return;
+
             try
             {
                 // For ASR settings, use cached status from CheckASRStatusAsync
@@ -412,7 +425,7 @@ namespace AtlantHarden.Services
                 foreach (var setting in allSettings)
                 {
                     if (!string.IsNullOrEmpty(setting.ASRGuid)) continue;
-                    CheckCurrentStatus(setting);
+                    CheckCurrentStatus(setting, includeSlowChecks: true);
                     current++;
                     if (current % 20 == 0)
                         progress?.Report((current, total, $"Checking: {setting.Name}"));
