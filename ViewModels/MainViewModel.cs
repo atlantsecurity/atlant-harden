@@ -1083,10 +1083,28 @@ namespace AtlantHarden.ViewModels
                     await Task.Yield();
                 }
 
+                // Registry values another still-enabled setting needs (STIG, ACSC and curated
+                // baselines overlap on ~80 values). Reverting one twin must not undo the other.
+                var stillWanted = _hardeningService.GetAllSettings()
+                    .Where(s => s.IsEnabled)
+                    .Select(HardeningService.RegistryIdentity)
+                    .Where(k => k != null)
+                    .ToHashSet();
+                var keptShared = new List<HardeningSetting>();
+
                 // Disable settings
                 foreach (var setting in toDisable)
                 {
                     StatusMessage = $"Disabling: {setting.Name}";
+
+                    var identity = HardeningService.RegistryIdentity(setting);
+                    if (identity != null && stillWanted.Contains(identity))
+                    {
+                        keptShared.Add(setting);
+                        setting.IsEnabled = true;   // it stays applied; keep the toggle honest
+                        ProgressValue++;
+                        continue;
+                    }
                     
                     try
                     {
@@ -1151,6 +1169,14 @@ namespace AtlantHarden.ViewModels
                         sb.AppendLine($"   • {s.Name}");
                     if (pending.Count > 12)
                         sb.AppendLine($"   …and {pending.Count - 12} more");
+                }
+
+                if (keptShared.Count > 0)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine($"ℹ {keptShared.Count} kept on because another enabled setting writes the same value:");
+                    foreach (var s in keptShared.Take(8))
+                        sb.AppendLine($"   • {s.Name}");
                 }
 
                 if (failCount > 0)

@@ -1,11 +1,62 @@
 using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace AtlantHarden.Services
 {
     public class RegistryService
     {
+        /// <summary>
+        /// SID of the signed-in (interactive) user whose HKCU per-user settings should change.
+        /// When a standard user elevates with a separate admin account, this process's own
+        /// HKCU is the ADMIN's hive; per-user policies written there would never reach the person
+        /// at the keyboard. In that case HKCU paths are redirected to HKU\&lt;their SID&gt;.
+        /// Null when the interactive user is the same account as this process (normal case).
+        /// </summary>
+        public static string? TargetUserSid { get; private set; }
+
+        /// <summary>DOMAIN\user whose per-user (HKCU) settings this app changes.</summary>
+        public static string TargetUserName { get; private set; } = Environment.UserDomainName + "\\" + Environment.UserName;
+
+        static RegistryService()
+        {
+            try { DetectInteractiveUser(); } catch { /* fall back to this process's HKCU */ }
+        }
+
+        [DllImport("wtsapi32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool WTSQuerySessionInformation(IntPtr hServer, int sessionId, int infoClass,
+            out IntPtr buffer, out int bytesReturned);
+        [DllImport("wtsapi32.dll")]
+        private static extern void WTSFreeMemory(IntPtr memory);
+        private const int WTSUserName = 5, WTSDomainName = 7;
+
+        private static string? QuerySession(int sessionId, int infoClass)
+        {
+            if (!WTSQuerySessionInformation(IntPtr.Zero, sessionId, infoClass, out var buf, out _)) return null;
+            try { return Marshal.PtrToStringUni(buf); } finally { WTSFreeMemory(buf); }
+        }
+
+        private static void DetectInteractiveUser()
+        {
+            var session = System.Diagnostics.Process.GetCurrentProcess().SessionId;
+            var user = QuerySession(session, WTSUserName);
+            var domain = QuerySession(session, WTSDomainName);
+            if (string.IsNullOrEmpty(user)) return;
+
+            var account = string.IsNullOrEmpty(domain) ? user : $"{domain}\\{user}";
+            var sid = new NTAccount(account).Translate(typeof(SecurityIdentifier)).Value;
+            var mySid = WindowsIdentity.GetCurrent().User?.Value;
+            if (string.Equals(sid, mySid, StringComparison.OrdinalIgnoreCase)) return;
+
+            // Only redirect when that user's hive is actually loaded (they're signed in).
+            using var hive = Registry.Users.OpenSubKey(sid);
+            if (hive == null) return;
+            TargetUserSid = sid;
+            TargetUserName = account;
+        }
+
         public static object? ReadValue(string path, string keyName)
         {
             try
@@ -186,6 +237,9 @@ namespace AtlantHarden.Services
             var parts = normalizedPath.Split(new[] { '\\' }, 2);
             var rootKeyName = parts[0].ToUpperInvariant();
             var subPath = parts.Length > 1 ? parts[1] : string.Empty;
+
+            if (rootKeyName == "HKCU" && TargetUserSid != null)
+                return (Registry.Users, string.IsNullOrEmpty(subPath) ? TargetUserSid : TargetUserSid + "\\" + subPath);
 
             RegistryKey rootKey = rootKeyName switch
             {

@@ -20,7 +20,23 @@ namespace AtlantHarden.Services
         {
             _asrService = new ASRService();
             _allSettings = InitializeSettings();
+
+            // Higher = stricter for these policies; see HardeningSetting.AtLeast.
+            foreach (var s in _allSettings)
+                if (s.Type == SettingType.Registry && AtLeastKeys.Contains(s.RegistryKey))
+                    s.AtLeast = true;
         }
+
+        private static readonly HashSet<string> AtLeastKeys = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "LDAPClientIntegrity", "LmCompatibilityLevel"
+        };
+
+        /// <summary>Registry identity of a setting's primary value, for detecting overlapping settings.</summary>
+        public static string? RegistryIdentity(HardeningSetting s) =>
+            s.Type == SettingType.Registry && !string.IsNullOrEmpty(s.RegistryPath) && !string.IsNullOrEmpty(s.RegistryKey)
+                ? (s.RegistryPath.Replace("HKEY_LOCAL_MACHINE", "HKLM").Replace("HKEY_CURRENT_USER", "HKCU") + "|" + s.RegistryKey).ToUpperInvariant()
+                : null;
 
         public List<HardeningSetting> GetAllSettings() => _allSettings;
         
@@ -239,7 +255,9 @@ namespace AtlantHarden.Services
 
                     if (setting.RecommendedValue != null)
                     {
-                        setting.IsApplied = AreValuesEqual(currentValue, setting.RecommendedValue);
+                        setting.IsApplied = setting.AtLeast
+                            ? IsAtLeast(currentValue, setting.RecommendedValue)
+                            : AreValuesEqual(currentValue, setting.RecommendedValue);
                     }
 
                     // SMBv1 is fully removable on Win10/11 via the "SMB1Protocol" optional feature.
@@ -272,6 +290,16 @@ namespace AtlantHarden.Services
                     {
                         setting.IsApplied = AreValuesEqual(currentValue, setting.VerifyValue);
                     }
+                }
+                else if (!string.IsNullOrEmpty(setting.ValidationCommand))
+                {
+                    // Script-based check for state that isn't a single registry value
+                    // (lockout policy via secedit, per-interface NetBIOS). Must print True/False.
+                    var cmd = setting.ValidationCommand;
+                    var output = Task.Run(() => ProcessRunner.RunPowerShellAsync(cmd, TimeSpan.FromSeconds(30))).GetAwaiter().GetResult();
+                    var ok = output.Success && output.StdOut.Trim().EndsWith("True", StringComparison.OrdinalIgnoreCase);
+                    setting.IsApplied = ok;
+                    setting.CurrentValue = output.Success ? (ok ? "Configured" : "Not Configured") : "Unknown";
                 }
                 else
                 {
@@ -376,20 +404,20 @@ namespace AtlantHarden.Services
             // Phase 2: Check registry-based settings
             progress?.Report((current, total, "Phase 2/2: Checking registry settings..."));
             
-            foreach (var setting in allSettings)
+            // Off the UI thread: some checks start short-lived processes (netsh, auditpol,
+            // secedit) and would otherwise freeze the window. Property-change notifications for
+            // scalar properties are marshalled by WPF, and no collection is touched here.
+            await Task.Run(() =>
             {
-                if (string.IsNullOrEmpty(setting.ASRGuid))
+                foreach (var setting in allSettings)
                 {
+                    if (!string.IsNullOrEmpty(setting.ASRGuid)) continue;
                     CheckCurrentStatus(setting);
                     current++;
-                    
                     if (current % 20 == 0)
-                    {
                         progress?.Report((current, total, $"Checking: {setting.Name}"));
-                        await Task.Delay(1); // Yield for UI responsiveness
-                    }
                 }
-            }
+            });
             
             progress?.Report((total, total, "Verification complete"));
         }
@@ -476,6 +504,15 @@ namespace AtlantHarden.Services
                 StringComparison.OrdinalIgnoreCase) ?? false;
         }
 
+        private bool IsAtLeast(object? current, object? recommended)
+        {
+            if (IsNumeric(current) && IsNumeric(recommended))
+            {
+                try { return Convert.ToInt64(current) >= Convert.ToInt64(recommended); } catch { }
+            }
+            return AreValuesEqual(current, recommended);
+        }
+
         private bool IsNumeric(object? value)
         {
             if (value == null) return false;
@@ -486,6 +523,10 @@ namespace AtlantHarden.Services
         {
             if (setting.RecommendedValue == null)
                 return false;
+
+            // Never lower a stricter value another baseline already set (see AtLeast).
+            if (setting.AtLeast && IsAtLeast(RegistryService.ReadValue(setting.RegistryPath, setting.RegistryKey), setting.RecommendedValue))
+                return true;
 
             var valueKind = RegistryService.ParseValueKind(setting.RegistryValueType);
             var ok = RegistryService.WriteValue(setting.RegistryPath, setting.RegistryKey,
@@ -678,6 +719,9 @@ namespace AtlantHarden.Services
                     Risk = RiskLevel.Low,
                     ApplyCommand = "setx /M MP_FORCE_USE_SANDBOX 1",
                     RevertCommand = "setx /M MP_FORCE_USE_SANDBOX 0",
+                    VerifyRegistryPath = @"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
+                    VerifyRegistryKey = "MP_FORCE_USE_SANDBOX",
+                    VerifyValue = "1",
                     RequiresReboot = true,
                     Tags = new[] { "defender", "sandbox" }
                 },
@@ -1394,10 +1438,13 @@ namespace AtlantHarden.Services
                     Name = "Disable NetBIOS over TCP/IP",
                     Description = "Stop NetBIOS over TCP/IP service",
                     Category = SettingCategory.NetworkSecurity,
-                    Type = SettingType.Command,
+                    Type = SettingType.PowerShell,
                     Risk = RiskLevel.Medium,
-                    ApplyCommand = "wmic nicconfig where TcpipNetbiosOptions=0 call SetTcpipNetbios 2 & wmic nicconfig where TcpipNetbiosOptions=1 call SetTcpipNetbios 2",
-                    RevertCommand = "wmic nicconfig where TcpipNetbiosOptions=2 call SetTcpipNetbios 0",
+                    // Per-interface NetBT setting (2 = disable NetBIOS over TCP/IP). WMIC is not installed
+                    // by default on Windows 11 24H2+, so set the registry values directly.
+                    ApplyCommand = "Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters\\Interfaces' | ForEach-Object { Set-ItemProperty -LiteralPath $_.PSPath -Name NetbiosOptions -Value 2 -Type DWord }",
+                    RevertCommand = "Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters\\Interfaces' | ForEach-Object { Set-ItemProperty -LiteralPath $_.PSPath -Name NetbiosOptions -Value 0 -Type DWord }",
+                    ValidationCommand = "$i = @(Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Services\\NetBT\\Parameters\\Interfaces'); ($i.Count -gt 0) -and -not ($i | Where-Object { (Get-ItemProperty -LiteralPath $_.PSPath -Name NetbiosOptions -ErrorAction SilentlyContinue).NetbiosOptions -ne 2 })",
                     ImpactWarning = "May affect legacy file sharing",
                     Tags = new[] { "netbios", "legacy" }
                 },
@@ -1631,6 +1678,9 @@ namespace AtlantHarden.Services
                     Risk = RiskLevel.Low,
                     ApplyCommand = "fsutil behavior set disable8dot3 1",
                     RevertCommand = "fsutil behavior set disable8dot3 0",
+                    VerifyRegistryPath = @"HKLM\SYSTEM\CurrentControlSet\Control\FileSystem",
+                    VerifyRegistryKey = "NtfsDisable8dot3NameCreation",
+                    VerifyValue = 1,
                     Tags = new[] { "filesystem", "8.3" }
                 },
                 new HardeningSetting
@@ -2124,6 +2174,9 @@ namespace AtlantHarden.Services
                     Risk = RiskLevel.Low,
                     ApplyCommand = "wevtutil sl Security /ms:1024000000",
                     RevertCommand = "wevtutil sl Security /ms:20971520",
+                    VerifyRegistryPath = @"HKLM\SYSTEM\CurrentControlSet\Services\EventLog\Security",
+                    VerifyRegistryKey = "MaxSize",
+                    VerifyValue = 1024000000,
                     Tags = new[] { "eventlog", "security", "size" }
                 },
                 new HardeningSetting
