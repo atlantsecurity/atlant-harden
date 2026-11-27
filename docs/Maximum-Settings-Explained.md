@@ -19,7 +19,7 @@ The full set is documented **one page per category** — click a page for its co
 | [Windows Firewall — LOLBin Blocking](settings/windows-firewall-lolbin-blocking.md) | 10 |
 | [Logging & Auditing](settings/logging-auditing.md) | 12 |
 | [Removable Media](settings/removable-media.md) | 3 |
-| [Privacy](settings/privacy.md) | 12 |
+| [Privacy](settings/privacy.md) | 19 |
 | [Microsoft Edge Hardening](settings/microsoft-edge-hardening.md) | 12 |
 | [Google Chrome Hardening](settings/google-chrome-hardening.md) | 18 |
 | [Mozilla Firefox Hardening](settings/mozilla-firefox-hardening.md) | 10 |
@@ -32,7 +32,7 @@ The full set is documented **one page per category** — click a page for its co
 | [DISA STIG — Microsoft Office 365 ProPlus (V3R5) &mdash; Part 1 of 2](settings/disa-stig-microsoft-office-365-proplus-v3r5-part-1.md) | 53 |
 | [DISA STIG — Microsoft Office 365 ProPlus (V3R5) &mdash; Part 2 of 2](settings/disa-stig-microsoft-office-365-proplus-v3r5-part-2.md) | 53 |
 
-**Total: 599 settings.**
+**Total: 606 settings.**
 
 On each page, every setting is tagged **Recommended** or **Maximum-only**.
 
