@@ -1449,10 +1449,14 @@ namespace AtlantHarden.ViewModels
                 Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
                 File.WriteAllText(marker, DateTime.Now.ToString("o"));
 
-                var answer = MessageBox.Show(
+                var owner = Application.Current?.MainWindow;
+                var text =
                     "Welcome to AtlantHarden.\n\nBefore changing anything, create a Windows System Restore point? " +
-                    "It's the safest way back if a setting ever causes trouble. (Takes about a minute.)",
-                    "Create a restore point first?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    "It's the safest way back if a setting ever causes trouble. (Takes about a minute.)";
+                const string caption = "Create a restore point first?";
+                var answer = owner != null
+                    ? MessageBox.Show(owner, text, caption, MessageBoxButton.YesNo, MessageBoxImage.Question)
+                    : MessageBox.Show(text, caption, MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (answer == MessageBoxResult.Yes)
                     await CreateRestorePointAsync();
             }
