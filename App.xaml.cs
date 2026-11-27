@@ -187,7 +187,18 @@ namespace AtlantHarden
 
                     MainWindow = mainWindow;
                     mainWindow.Show();
-                    _ = viewModel.OfferFirstRunRestorePointAsync();
+
+                    // Close the (topmost) splash before anything can show a dialog: a modal
+                    // prompt shown while it is open blocks this method, so the splash would
+                    // stay on top of the main window and hide the prompt behind it.
+                    _splashScreen?.Close();
+                    _splashScreen = null;
+                    mainWindow.Activate();
+
+                    // Ask about a restore point once the main window has rendered.
+                    _ = mainWindow.Dispatcher.BeginInvoke(
+                        System.Windows.Threading.DispatcherPriority.ApplicationIdle,
+                        new Action(() => _ = viewModel.OfferFirstRunRestorePointAsync()));
                 }
             }
             catch (Exception ex)
@@ -293,8 +304,14 @@ Note: Administrator privileges are required.
                 if (isError) Console.Error.WriteLine(message); else Console.WriteLine(message);
                 return;
             }
-            MessageBox.Show(message, title, MessageBoxButton.OK,
-                isError ? MessageBoxImage.Error : MessageBoxImage.Information);
+            // The splash is topmost; parent the dialog to it so it isn't hidden behind it.
+            var splash = (Current as App)?._splashScreen;
+            if (splash != null && splash.IsVisible)
+                MessageBox.Show(splash, message, title, MessageBoxButton.OK,
+                    isError ? MessageBoxImage.Error : MessageBoxImage.Information);
+            else
+                MessageBox.Show(message, title, MessageBoxButton.OK,
+                    isError ? MessageBoxImage.Error : MessageBoxImage.Information);
         }
 
         private static bool IsRunningAsAdministrator()
