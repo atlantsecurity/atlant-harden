@@ -238,42 +238,6 @@ namespace AtlantHarden.Services
         }
 
         /// <summary>
-        /// Import and apply a .reg file directly
-        /// </summary>
-        public async Task<(bool success, string message)> ImportRegFileAsync(string regFilePath)
-        {
-            try
-            {
-                if (!File.Exists(regFilePath))
-                    return (false, "File not found");
-
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "reg.exe",
-                    Arguments = $"import \"{regFilePath}\"",
-                    UseShellExecute = true,
-                    Verb = "runas",
-                    CreateNoWindow = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null)
-                    return (false, "Could not start reg.exe");
-
-                await process.WaitForExitAsync();
-                
-                if (process.ExitCode == 0)
-                    return (true, "Registry file imported successfully");
-                else
-                    return (false, $"reg.exe exited with code {process.ExitCode}");
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
-        }
-
-        /// <summary>
         /// Convert a value read back from backup JSON to the CLR type the registry API expects.
         /// byte[] is serialized by System.Text.Json as a base64 string; string[] as a JSON array.
         /// </summary>
@@ -379,189 +343,107 @@ namespace AtlantHarden.Services
 
         #region System Restore
 
+        private const string SystemRestoreKey = @"HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore";
+
         /// <summary>
-        /// Create a Windows System Restore Point
+        /// Create a Windows System Restore point and VERIFY it exists. Windows normally allows one
+        /// restore point per 24 hours and, when throttled, Checkpoint-Computer only prints a warning
+        /// and exits 0 — so success is confirmed by finding the new point, and the 24-hour limit is
+        /// lifted for this one call (SystemRestorePointCreationFrequency = 0) and then put back.
         /// </summary>
         public async Task<(bool success, string message)> CreateSystemRestorePointAsync(string description = "AtlantHarden")
         {
+            object? oldFrequency = null;
+            bool hadFrequency = false;
             try
             {
-                // First ensure System Restore is enabled
-                var enableResult = await EnableSystemRestoreAsync();
-                if (!enableResult.success && !enableResult.message.Contains("already enabled"))
-                {
-                    // Try to continue anyway
-                }
+                await EnableSystemRestoreAsync();
 
-                // Create restore point using PowerShell
-                var result = await Task.Run(() =>
-                {
-                    try
-                    {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = "powershell.exe",
-                            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"Checkpoint-Computer -Description '{description}' -RestorePointType 'MODIFY_SETTINGS'\"",
-                            UseShellExecute = true,
-                            Verb = "runas",
-                            CreateNoWindow = false
-                        };
+                var before = (await GetRestorePointsAsync()).Select(p => p.SequenceNumber).DefaultIfEmpty(0).Max();
 
-                        using var process = Process.Start(psi);
-                        if (process == null)
-                            return (false, "Could not start PowerShell");
+                hadFrequency = RegistryService.ValueExists(SystemRestoreKey, "SystemRestorePointCreationFrequency");
+                if (hadFrequency) oldFrequency = RegistryService.ReadValue(SystemRestoreKey, "SystemRestorePointCreationFrequency");
+                RegistryService.WriteValue(SystemRestoreKey, "SystemRestorePointCreationFrequency", 0, RegistryValueKind.DWord);
 
-                        process.WaitForExit(120000); // 2 minute timeout
+                var desc = description.Replace("'", "''");
+                var r = await ProcessRunner.RunPowerShellAsync(
+                    $"Checkpoint-Computer -Description '{desc}' -RestorePointType 'MODIFY_SETTINGS'",
+                    TimeSpan.FromMinutes(5));
+                if (r.TimedOut) return (false, "Creating the restore point timed out.");
 
-                        if (!process.HasExited)
-                        {
-                            process.Kill();
-                            return (false, "Operation timed out");
-                        }
+                var after = (await GetRestorePointsAsync()).Select(p => p.SequenceNumber).DefaultIfEmpty(0).Max();
+                if (after > before)
+                    return (true, "System Restore point created.");
 
-                        // Exit code 0 = success, 1111 = already created within 24 hours
-                        if (process.ExitCode == 0)
-                            return (true, "System Restore Point created successfully!");
-                        else if (process.ExitCode == 1)
-                            return (false, "Windows only allows one restore point every 24 hours. Try again later.");
-                        else
-                            return (false, $"PowerShell exited with code {process.ExitCode}. Make sure you're running as Administrator.");
-                    }
-                    catch (Exception ex)
-                    {
-                        return (false, ex.Message);
-                    }
-                });
-
-                return result;
+                var why = string.IsNullOrWhiteSpace(r.StdErr) ? "" : $"\n\n{r.StdErr.Trim()}";
+                return (false, "Windows did not create a restore point. System Protection may be turned off for the " +
+                               "system drive, or there is no shadow-copy space (System Properties → System Protection)." + why);
             }
             catch (Exception ex)
             {
                 return (false, ex.Message);
             }
+            finally
+            {
+                if (hadFrequency && oldFrequency != null)
+                    RegistryService.WriteValue(SystemRestoreKey, "SystemRestorePointCreationFrequency", oldFrequency, RegistryValueKind.DWord);
+                else
+                    RegistryService.DeleteValue(SystemRestoreKey, "SystemRestorePointCreationFrequency");
+            }
         }
 
-        /// <summary>
-        /// Enable System Restore on the system drive
-        /// </summary>
+        /// <summary>Enable System Restore on the system drive (no-op if already on).</summary>
         public async Task<(bool success, string message)> EnableSystemRestoreAsync()
         {
-            try
-            {
-                var systemDrive = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
-                
-                var result = await Task.Run(() =>
-                {
-                    try
-                    {
-                        var psi = new ProcessStartInfo
-                        {
-                            FileName = "powershell.exe",
-                            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"Enable-ComputerRestore -Drive '{systemDrive}'\"",
-                            UseShellExecute = true,
-                            Verb = "runas",
-                            CreateNoWindow = true
-                        };
-
-                        using var process = Process.Start(psi);
-                        if (process == null)
-                            return (false, "Could not start PowerShell");
-
-                        process.WaitForExit(30000);
-
-                        return process.ExitCode == 0 
-                            ? (true, "System Restore enabled") 
-                            : (false, "Could not enable System Restore");
-                    }
-                    catch (Exception ex)
-                    {
-                        return (false, ex.Message);
-                    }
-                });
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                return (false, ex.Message);
-            }
+            var systemDrive = Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
+            var r = await ProcessRunner.RunPowerShellAsync(
+                $"Enable-ComputerRestore -Drive '{systemDrive.Replace("'", "''")}'", TimeSpan.FromSeconds(60));
+            return r.Success ? (true, "System Restore enabled") : (false, "Could not enable System Restore");
         }
 
-        /// <summary>
-        /// Open Windows System Restore dialog
-        /// </summary>
+        /// <summary>Open the Windows System Restore wizard.</summary>
         public void OpenSystemRestoreDialog()
         {
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "rstrui.exe",
-                    UseShellExecute = true,
-                    Verb = "runas"
-                };
-                Process.Start(psi);
+                Process.Start(new ProcessStartInfo { FileName = ProcessRunner.Tool("rstrui.exe"), UseShellExecute = true });
             }
             catch
             {
-                // Try alternative method
-                try
-                {
-                    Process.Start("control.exe", "/name Microsoft.Recovery");
-                }
+                try { Process.Start(new ProcessStartInfo { FileName = ProcessRunner.Tool("control.exe"), Arguments = "/name Microsoft.Recovery", UseShellExecute = true }); }
                 catch { }
             }
         }
 
-        /// <summary>
-        /// Get list of available System Restore points
-        /// </summary>
+        /// <summary>List available System Restore points.</summary>
         public async Task<List<SystemRestorePoint>> GetRestorePointsAsync()
         {
             var points = new List<SystemRestorePoint>();
-            
             try
             {
-                var result = await Task.Run(() =>
+                var r = await ProcessRunner.RunPowerShellAsync(
+                    "Get-ComputerRestorePoint | Select-Object SequenceNumber,Description,RestorePointType," +
+                    "@{n='Created';e={$_.ConvertToDateTime($_.CreationTime).ToString('o')}} | ConvertTo-Json -Compress",
+                    TimeSpan.FromSeconds(60));
+                var json = r.StdOut.Trim();
+                if (string.IsNullOrEmpty(json)) return points;
+
+                using var doc = JsonDocument.Parse(json.StartsWith("[") ? json : $"[{json}]");
+                foreach (var el in doc.RootElement.EnumerateArray())
                 {
-                    var psi = new ProcessStartInfo
+                    points.Add(new SystemRestorePoint
                     {
-                        FileName = "powershell.exe",
-                        Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"Get-ComputerRestorePoint | ConvertTo-Json\"",
-                        UseShellExecute = false,
-                        RedirectStandardOutput = true,
-                        CreateNoWindow = true
-                    };
-
-                    using var process = Process.Start(psi);
-                    if (process == null) return "";
-
-                    var output = process.StandardOutput.ReadToEnd();
-                    process.WaitForExit(30000);
-                    return output;
-                });
-
-                if (!string.IsNullOrWhiteSpace(result))
-                {
-                    // Parse JSON output
-                    using var doc = JsonDocument.Parse(result.StartsWith("[") ? result : $"[{result}]");
-                    foreach (var element in doc.RootElement.EnumerateArray())
-                    {
-                        points.Add(new SystemRestorePoint
-                        {
-                            SequenceNumber = element.GetProperty("SequenceNumber").GetInt32(),
-                            Description = element.GetProperty("Description").GetString() ?? "",
-                            CreationTime = DateTime.Parse(element.GetProperty("CreationTime").GetString() ?? DateTime.Now.ToString()),
-                            RestorePointType = element.GetProperty("RestorePointType").GetInt32()
-                        });
-                    }
+                        SequenceNumber = el.TryGetProperty("SequenceNumber", out var sn) && sn.TryGetInt32(out var n) ? n : 0,
+                        Description = el.TryGetProperty("Description", out var d) ? d.GetString() ?? "" : "",
+                        CreationTime = el.TryGetProperty("Created", out var c) && DateTime.TryParse(c.GetString(), out var dt) ? dt : DateTime.MinValue,
+                        RestorePointType = el.TryGetProperty("RestorePointType", out var rt) && rt.TryGetInt32(out var tp) ? tp : 0
+                    });
                 }
             }
             catch
             {
-                // Return empty list on error
+                // Return what we have on error
             }
-
             return points.OrderByDescending(p => p.CreationTime).ToList();
         }
 

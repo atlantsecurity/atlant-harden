@@ -501,67 +501,14 @@ namespace AtlantHarden.Services
             return ok;
         }
 
-        private async Task<bool> RunPowerShellAsync(string command)
+        private static async Task<bool> RunPowerShellAsync(string command)
+            => (await ProcessRunner.RunPowerShellAsync(command)).Success;
+
+        private static async Task<string> RunPowerShellCaptureAsync(string command)
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return false;
-                
-                await process.WaitForExitAsync();
-                return process.ExitCode == 0;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private async Task<string> RunPowerShellCaptureAsync(string command)
-        {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return string.Empty;
-
-                // Guard against a hung child (e.g. Get-AppxPackage stalling) freezing startup/refresh.
-                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(45));
-                var readTask = process.StandardOutput.ReadToEndAsync();
-                try
-                {
-                    await process.WaitForExitAsync(cts.Token);
-                }
-                catch (OperationCanceledException)
-                {
-                    try { process.Kill(true); } catch { }
-                    return string.Empty;
-                }
-                return await readTask;
-            }
-            catch
-            {
-                return string.Empty;
-            }
+            // Guard against a hung child (e.g. Get-AppxPackage stalling) freezing startup/refresh.
+            var r = await ProcessRunner.RunPowerShellAsync(command, TimeSpan.FromSeconds(45));
+            return r.TimedOut ? string.Empty : r.StdOut;
         }
 
         /// <summary>
@@ -589,94 +536,47 @@ namespace AtlantHarden.Services
             _appStatusLoaded = true;
         }
 
-        private async Task<bool> RunCommandAsync(string command)
-        {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c {command}",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return false;
-                
-                await process.WaitForExitAsync();
-                return process.ExitCode == 0;
-            }
-            catch
-            {
-                return false;
-            }
-        }
+        private static async Task<bool> RunCommandAsync(string command)
+            => (await ProcessRunner.RunCmdAsync(command)).Success;
 
         private bool CheckFirewallRuleExists(string ruleName)
         {
-            try
-            {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "netsh",
-                    Arguments = $"advfirewall firewall show rule name=\"{ruleName}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return false;
-                
-                var output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit(5000); // 5-second timeout
-
-                // If the rule exists, the output will contain the rule name
-                // If it doesn't exist, it will say "No rules match the specified criteria"
-                return process.ExitCode == 0 && !output.Contains("No rules match");
-            }
-            catch
-            {
-                return false;
-            }
+            // netsh exits non-zero when no rule matches; don't parse (localized) output.
+            var r = ProcessRunner.Run(ProcessRunner.Tool("netsh.exe"),
+                $"advfirewall firewall show rule name=\"{ruleName}\"", TimeSpan.FromSeconds(10));
+            return r.Success;
         }
 
+        /// <summary>
+        /// Read an audit subcategory's setting. Uses auditpol's CSV report (/r), whose last
+        /// column is the numeric setting (0 none, 1 success, 2 failure, 3 both), so this works on
+        /// non-English Windows. Applied only when BOTH success and failure are audited, which is
+        /// what these settings enable — "Success only" would hide failed logons.
+        /// </summary>
         private (bool isEnabled, string status) CheckAuditPolicyStatus(string subcategory)
         {
             try
             {
-                var psi = new ProcessStartInfo
+                var r = ProcessRunner.Run(ProcessRunner.Tool("auditpol.exe"),
+                    $"/get /subcategory:\"{subcategory}\" /r", TimeSpan.FromSeconds(10));
+                if (!r.Success) return (false, "Error");
+
+                var lines = r.StdOut.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                var data = lines.Length > 1 ? lines[^1] : string.Empty;
+                var last = data.Split(',').LastOrDefault()?.Trim();
+                int value = int.TryParse(last, out var v) ? v
+                    // Older auditpol without the numeric column: fall back to the English text.
+                    : data.Contains("Success and Failure") ? 3
+                    : data.Contains("Success") ? 1
+                    : data.Contains("Failure") ? 2 : 0;
+
+                return value switch
                 {
-                    FileName = "auditpol",
-                    Arguments = $"/get /subcategory:\"{subcategory}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
+                    3 => (true, "Success and Failure"),
+                    1 => (false, "Success only"),
+                    2 => (false, "Failure only"),
+                    _ => (false, "No Auditing")
                 };
-
-                using var process = Process.Start(psi);
-                if (process == null) return (false, "Error");
-                
-                var output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit(5000); // 5-second timeout
-
-                // Parse the output to find the status
-                // Output format: "  Logon                                   Success and Failure"
-                if (output.Contains("Success and Failure"))
-                    return (true, "Success and Failure");
-                if (output.Contains("Success"))
-                    return (true, "Success Only");
-                if (output.Contains("Failure"))
-                    return (true, "Failure Only");
-                if (output.Contains("No Auditing"))
-                    return (false, "No Auditing");
-                    
-                return (false, "Not Configured");
             }
             catch
             {
@@ -2234,8 +2134,8 @@ namespace AtlantHarden.Services
                     Category = SettingCategory.Logging,
                     Type = SettingType.AuditPolicy,
                     Risk = RiskLevel.Low,
-                    ApplyCommand = "Auditpol /set /subcategory:\"Logon\" /success:enable /failure:enable",
-                    RevertCommand = "Auditpol /set /subcategory:\"Logon\" /success:disable /failure:disable",
+                    ApplyCommand = "Auditpol /set /subcategory:\"{0CCE9215-69AE-11D9-BED3-505054503030}\" /success:enable /failure:enable",
+                    RevertCommand = "Auditpol /set /subcategory:\"{0CCE9215-69AE-11D9-BED3-505054503030}\" /success:disable /failure:disable",
                     Tags = new[] { "audit", "logon" }
                 },
                 new HardeningSetting
@@ -2246,8 +2146,8 @@ namespace AtlantHarden.Services
                     Category = SettingCategory.Logging,
                     Type = SettingType.AuditPolicy,
                     Risk = RiskLevel.Low,
-                    ApplyCommand = "Auditpol /set /subcategory:\"Process Creation\" /success:enable /failure:enable",
-                    RevertCommand = "Auditpol /set /subcategory:\"Process Creation\" /success:disable /failure:disable",
+                    ApplyCommand = "Auditpol /set /subcategory:\"{0CCE922B-69AE-11D9-BED3-505054503030}\" /success:enable /failure:enable",
+                    RevertCommand = "Auditpol /set /subcategory:\"{0CCE922B-69AE-11D9-BED3-505054503030}\" /success:disable /failure:disable",
                     Tags = new[] { "audit", "process" }
                 }
             });

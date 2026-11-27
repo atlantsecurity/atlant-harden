@@ -59,21 +59,12 @@ namespace AtlantHarden.Services
 
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"$prefs = Get-MpPreference; if ($prefs.AttackSurfaceReductionRules_Ids) { for ($i=0; $i -lt $prefs.AttackSurfaceReductionRules_Ids.Count; $i++) { Write-Output ('{0}={1}' -f $prefs.AttackSurfaceReductionRules_Ids[$i], $prefs.AttackSurfaceReductionRules_Actions[$i]) } }\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return result;
-
-                var output = await process.StandardOutput.ReadToEndAsync();
-                await process.WaitForExitAsync();
+                var r = await ProcessRunner.RunPowerShellAsync(
+                    "$prefs = Get-MpPreference; if ($prefs.AttackSurfaceReductionRules_Ids) { " +
+                    "for ($i=0; $i -lt $prefs.AttackSurfaceReductionRules_Ids.Count; $i++) { " +
+                    "Write-Output ('{0}={1}' -f $prefs.AttackSurfaceReductionRules_Ids[$i], $prefs.AttackSurfaceReductionRules_Actions[$i]) } }",
+                    TimeSpan.FromSeconds(60));
+                var output = r.StdOut;
 
                 // Parse the output
                 var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -182,25 +173,10 @@ namespace AtlantHarden.Services
                     command = $"Add-MpPreference -AttackSurfaceReductionRules_Ids {guid} -AttackSurfaceReductionRules_Actions {actionValue}";
                 }
 
-                var psi = new ProcessStartInfo
+                var r = await ProcessRunner.RunPowerShellAsync(command);
+                if (!r.Success)
                 {
-                    FileName = "powershell.exe",
-                    Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return false;
-
-                var error = await process.StandardError.ReadToEndAsync();
-                await process.WaitForExitAsync();
-
-                if (process.ExitCode != 0)
-                {
-                    Debug.WriteLine($"ASR set failed: {error}");
+                    Debug.WriteLine($"ASR set failed: {r.StdErr}");
                     return false;
                 }
 
@@ -252,21 +228,8 @@ namespace AtlantHarden.Services
         {
             try
             {
-                var psi = new ProcessStartInfo
-                {
-                    FileName = "powershell.exe",
-                    Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"Get-MpPreference | Out-Null; $?\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-
-                using var process = Process.Start(psi);
-                if (process == null) return false;
-
-                var output = await process.StandardOutput.ReadToEndAsync();
-                await process.WaitForExitAsync();
+                var r = await ProcessRunner.RunPowerShellAsync("Get-MpPreference | Out-Null; $?", TimeSpan.FromSeconds(60));
+                var output = r.StdOut;
 
                 return output.Trim().Equals("True", StringComparison.OrdinalIgnoreCase);
             }
