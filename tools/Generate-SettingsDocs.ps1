@@ -27,6 +27,7 @@ foreach ($s in $data | Where-Object { $_.IsStig -and $_.Path }) {
 $cat = [ordered]@{
  'AttackSurfaceReduction' = @{ t='Attack Surface Reduction (ASR)'; why='Microsoft Defender ASR rules block the specific behaviours malware relies on — Office spawning executables, scripts launching payloads, credential theft from LSASS, ransomware file patterns — at the kernel level, before code runs. They are the single highest-value anti-malware control and are almost invisible in day-to-day use.' }
  'WindowsDefender' = @{ t='Microsoft Defender Antivirus'; why='Tunes the built-in antivirus itself — cloud-delivered protection, network protection, PUA (potentially unwanted application) blocking and sandboxing — so it catches more, faster, and cannot be casually paused.' }
+ 'WindowsUpdate' = @{ t='Windows Update'; why='Unpatched software is one of the most common ways attackers get in. These settings keep everything updating automatically: Windows itself (security updates installed without delay), drivers and device firmware, Office and other Microsoft products (.NET, SQL Server, Visual Studio) through Microsoft Update, Microsoft 365 Apps, Store apps, and the Edge and Chrome browsers.' }
  'CredentialProtection' = @{ t='Credential Protection'; why='Stops attackers from stealing the credentials that let them move from one machine to the whole network. These settings protect the LSASS process (where Windows holds credentials in memory), stop weak-hash and cleartext storage, and enforce modern authentication — the controls that defeat Mimikatz-style attacks.' }
  'NetworkSecurity' = @{ t='Network Security'; why='Removes the legacy and insecure network behaviour attackers abuse for interception and lateral movement: SMBv1 (EternalBlue/WannaCry), name-resolution poisoning (LLMNR/NetBIOS/WPAD), unsigned SMB/LDAP traffic, and anonymous enumeration of accounts and shares.' }
  'SystemHardening' = @{ t='System Hardening'; why='Core OS hardening — User Account Control, exploit mitigations (SEHOP, safe DLL search order), Autorun/Autoplay, SmartScreen for downloaded files, and closing privilege-escalation holes such as AlwaysInstallElevated.' }
@@ -47,6 +48,12 @@ $cat = [ordered]@{
  'StigFirefox' = @{ t='DISA STIG — Mozilla Firefox (V6R7)'; why='The full DISA Mozilla Firefox STIG, including strict policy lockdowns beyond the exploitation-prevention subset used by the Recommended profile.' }
  'StigOffice365' = @{ t='DISA STIG — Microsoft Office 365 ProPlus (V3R5)'; why='The full DISA Office 365 STIG — overwhelmingly high-value anti-document-malware controls (macro blocking, Protected View, ActiveX/DDE hardening, unsigned add-in blocking). The Recommended profile keeps these but omits the legacy file-format blocks that would stop old .doc/.xls/.ppt files from opening.' }
 }
+
+# Fail loudly if the app has a category this generator doesn't know, so new settings can't
+# silently drop out of the docs.
+$unknown = $data | Where-Object { $_.Category -and -not $cat.Contains([string]$_.Category) -and $_.Category -ne 'Bloatware' } |
+    Select-Object -ExpandProperty Category -Unique
+if ($unknown) { throw "Generate-SettingsDocs: no title/intro for category: $($unknown -join ', '). Add it to `$cat." }
 
 function ChangeLine($s) {
     if ($s.ASR) { return "Enables the Microsoft Defender ASR rule in **Block** mode." }
