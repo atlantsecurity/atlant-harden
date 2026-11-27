@@ -164,9 +164,10 @@ namespace AtlantHarden.Services
                 
                 if (action == ASRAction.Disabled || action == ASRAction.NotConfigured)
                 {
-                    // To disable/remove an ASR rule, we set it to Disabled (action 0)
-                    // Using numeric value for more reliable behavior
-                    command = $"Set-MpPreference -AttackSurfaceReductionRules_Ids {guid} -AttackSurfaceReductionRules_Actions 0";
+                    // To disable an ASR rule, set its action to Disabled (0) with Add-MpPreference,
+                    // which updates just this rule. Set-MpPreference would REPLACE the whole rule
+                    // list with this single entry, silently removing every other configured ASR rule.
+                    command = $"Add-MpPreference -AttackSurfaceReductionRules_Ids {guid} -AttackSurfaceReductionRules_Actions 0";
                 }
                 else
                 {

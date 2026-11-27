@@ -35,7 +35,7 @@ namespace AtlantHarden.Views
                         // Select All
                         if (DataContext is MainViewModel vm1)
                         {
-                            vm1.SelectAllCommand.Execute(null);
+                            if (vm1.SelectAllCommand.CanExecute(null)) vm1.SelectAllCommand.Execute(null);
                         }
                         e.Handled = true;
                         break;
@@ -44,7 +44,7 @@ namespace AtlantHarden.Views
                         // Deselect All
                         if (DataContext is MainViewModel vm2)
                         {
-                            vm2.DeselectAllCommand.Execute(null);
+                            if (vm2.DeselectAllCommand.CanExecute(null)) vm2.DeselectAllCommand.Execute(null);
                         }
                         e.Handled = true;
                         break;
@@ -53,7 +53,7 @@ namespace AtlantHarden.Views
                         // Refresh
                         if (DataContext is MainViewModel vm3)
                         {
-                            vm3.RefreshStatusCommand.Execute(null);
+                            if (vm3.RefreshStatusCommand.CanExecute(null)) vm3.RefreshStatusCommand.Execute(null);
                         }
                         e.Handled = true;
                         break;
@@ -62,7 +62,7 @@ namespace AtlantHarden.Views
                         // Apply Selected
                         if (DataContext is MainViewModel vm4)
                         {
-                            vm4.ApplySelectedCommand.Execute(null);
+                            if (vm4.ApplySelectedCommand.CanExecute(null)) vm4.ApplySelectedCommand.Execute(null);
                         }
                         e.Handled = true;
                         break;

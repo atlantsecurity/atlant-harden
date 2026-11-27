@@ -7,7 +7,8 @@
         Height="820" Width="1280"
         MinHeight="540" MinWidth="820"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BackgroundDarkBrush}">
+        Background="{StaticResource BackgroundDarkBrush}"
+        KeyDown="Window_KeyDown">
     
     <Window.DataContext>
         <vm:MainViewModel/>
