@@ -363,9 +363,7 @@ namespace AtlantHarden.ViewModels
             // builds, so fall back to the process path (the published .exe).
             try
             {
-                var location = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                if (string.IsNullOrEmpty(location))
-                    location = Environment.ProcessPath;
+                var location = Environment.ProcessPath;
                 if (!string.IsNullOrEmpty(location))
                 {
                     return System.IO.File.GetLastWriteTime(location);
@@ -1341,7 +1339,7 @@ namespace AtlantHarden.ViewModels
                 var path = _backupService.BackupDirectory;
                 if (!Directory.Exists(path))
                     Directory.CreateDirectory(path);
-                Process.Start("explorer.exe", path);
+                Process.Start(new ProcessStartInfo { FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), Arguments = $"\"{path}\"", UseShellExecute = false });
             }
             catch (Exception ex)
             {
