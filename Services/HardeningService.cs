@@ -2448,6 +2448,9 @@ namespace AtlantHarden.Services
             // Add Firewall LOLBin blocking rules
             settings.AddRange(AdditionalSettings.GetFirewallSettings());
             
+            // Windows Update: Windows, drivers/firmware, other Microsoft products, Store apps, browsers
+            settings.AddRange(WindowsUpdateSettings.GetAllSettings());
+
             // Add ACSC (Australian Cyber Security Centre) hardening settings
             settings.AddRange(ACSCSettings.GetAllSettings());
 

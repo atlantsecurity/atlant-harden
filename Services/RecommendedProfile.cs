@@ -204,6 +204,11 @@ namespace AtlantHarden.Services
                 case SettingCategory.Bloatware:
                     return false;
 
+                // Updates: everything that keeps software patched; the early-features, metered
+                // and no-pause options are Maximum-only (they cost data or remove user choice).
+                case SettingCategory.WindowsUpdate:
+                    return !WindowsUpdateMaximumOnly.Contains(s.Id);
+
                 // Windows Defender core protections (minus the brittle/privacy ones).
                 case SettingCategory.WindowsDefender:
                     return !MatchesAny(s.Name, DefenderExcludedNameFragments);
@@ -288,6 +293,11 @@ namespace AtlantHarden.Services
 
             return false;
         }
+
+        private static readonly HashSet<string> WindowsUpdateMaximumOnly = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "WU_LatestUpdatesAsap", "WU_DownloadOverMetered", "WU_DisablePause"
+        };
 
         private static readonly HashSet<string> EssentialKeys = new(StringComparer.OrdinalIgnoreCase)
         {

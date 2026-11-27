@@ -2,7 +2,7 @@
 
 ![Atlant Security Logo](Resources/logo.png)
 
-AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **606 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — through one-click, review-before-apply profiles with full backup and restore. It also includes one-click **Windows debloat** (remove Store junk and OEM/AV bloat) and a **Tighten Up Privacy** cleanup. The released build is a single **self-contained executable** (no .NET runtime to install).
+AtlantHarden is a comprehensive Windows 10/11 security hardening application with a modern, professional UI. It applies **621 hardening settings** — including **354 DISA STIG controls** across Windows 11, Edge, Chrome, Firefox, and Office 365 (latest releases), plus the **ACSC Essential Eight** — and keeps **Windows Update** fully on (drivers and firmware, Office and other Microsoft products, Store apps, browsers), through one-click, review-before-apply profiles with full backup and restore. It also includes one-click **Windows debloat** (remove Store junk and OEM/AV bloat) and a **Tighten Up Privacy** cleanup. The released build is a single **self-contained executable** (no .NET runtime to install).
 
 ## ⬇️ Download
 
@@ -80,8 +80,8 @@ DISA releases and loaded from an auditable, regenerable catalog (`Resources/stig
 ### 🎚️ One-Click Profiles (review before you apply)
 Three curated profiles, each with **Apply** and a **Show settings** button that opens a scrollable review of every setting (name, description, registry change, current vs. recommended value) before anything is applied:
 - **Basic** (95 settings) - the highest-impact, effectively zero-friction core
-- **Recommended** (325 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
-- **Maximum** (606 settings) - everything, including the strict DISA STIG lockdowns
+- **Recommended** (337 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
+- **Maximum** (621 settings) - everything, including the strict DISA STIG lockdowns
 
 Bloatware removal and the privacy cleanup are kept **separate** from these profiles — they're reached from the dashboard's **Cleanup & Privacy** section (a one-click *Tighten Up Privacy* and a review-first *Clean Up Bloat*), so applying a security profile never uninstalls an app.
 

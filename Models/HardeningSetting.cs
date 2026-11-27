@@ -48,7 +48,8 @@ namespace AtlantHarden.Models
         StigEdge,
         StigChrome,
         StigFirefox,
-        StigOffice365
+        StigOffice365,
+        WindowsUpdate
     }
 
     /// <summary>Human-readable names for <see cref="SettingCategory"/>.</summary>
@@ -73,6 +74,7 @@ namespace AtlantHarden.Models
             SettingCategory.RemovalMedia => "Removable Media",
             SettingCategory.AdobeReader => "Adobe Reader",
             SettingCategory.Bloatware => "Bloatware",
+            SettingCategory.WindowsUpdate => "Windows Update",
             SettingCategory.StigWindows11 => "STIG · Windows 11",
             SettingCategory.StigEdge => "STIG · Edge",
             SettingCategory.StigChrome => "STIG · Chrome",

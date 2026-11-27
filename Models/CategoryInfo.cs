@@ -176,6 +176,14 @@ namespace AtlantHarden.Models
                     Icon = "📕",
                     AccentColor = Color.FromRgb(255, 0, 0)
                 },
+                SettingCategory.WindowsUpdate => new CategoryInfo
+                {
+                    Category = category,
+                    Name = "Windows Update",
+                    Description = "Keep Windows, drivers and firmware, Office and other Microsoft products, Store apps and browsers updating automatically",
+                    Icon = "🔄",
+                    AccentColor = Color.FromRgb(0, 120, 212)
+                },
                 SettingCategory.Bloatware => new CategoryInfo
                 {
                     Category = category,
