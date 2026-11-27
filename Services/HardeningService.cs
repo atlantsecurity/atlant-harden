@@ -117,7 +117,11 @@ namespace AtlantHarden.Services
                 if (string.IsNullOrEmpty(setting.RevertCommand))
                     return false;
 
-                return await RunCommandAsync(setting.RevertCommand);
+                // Revert with the same interpreter that applied the setting: PowerShell settings
+                // (e.g. Set-MpPreference) are not cmd.exe commands and fail silently under cmd /c.
+                return setting.Type == SettingType.PowerShell
+                    ? await RunPowerShellAsync(setting.RevertCommand)
+                    : await RunCommandAsync(setting.RevertCommand);
             }
             catch
             {
