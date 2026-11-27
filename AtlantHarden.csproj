@@ -5,9 +5,6 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
-    <!-- Redirect intermediate build output to avoid OneDrive/long path issues -->
-    <BaseIntermediateOutputPath>C:\Temp\AtlantBuild\obj\</BaseIntermediateOutputPath>
-    <IntermediateOutputPath>$(BaseIntermediateOutputPath)</IntermediateOutputPath>
     <ApplicationIcon>Resources\atlant.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>AtlantHarden</AssemblyName>
@@ -17,9 +14,9 @@
     <Product>AtlantHarden — Windows Security Hardening Tool</Product>
     <Description>Professional Windows 10/11 Security Hardening Application by Atlant Security LTD</Description>
     <Copyright>Copyright © Atlant Security LTD $([System.DateTime]::Now.Year). All rights reserved.</Copyright>
-    <Version>2.1.1</Version>
-    <FileVersion>2.1.1.0</FileVersion>
-    <AssemblyVersion>2.1.1.0</AssemblyVersion>
+    <Version>2.2.0</Version>
+    <FileVersion>2.2.0.0</FileVersion>
+    <AssemblyVersion>2.2.0.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +32,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The unit-test project lives under tests/; keep its sources out of the app. -->
+    <Compile Remove="tests\**" />
+    <None Remove="tests\**" />
+    <Page Remove="tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
   </ItemGroup>
 
@@ -42,6 +46,10 @@
     <None Update="app.manifest">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="AtlantHarden.Tests" />
   </ItemGroup>
 
 </Project>
