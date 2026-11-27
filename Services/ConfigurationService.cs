@@ -138,7 +138,9 @@ namespace AtlantHarden.Services
         /// <summary>
         /// Apply a configuration profile to settings
         /// </summary>
-        public static int ApplyConfiguration(ConfigurationProfile profile, IEnumerable<HardeningSetting> settings)
+        /// <param name="additive">true: only switch listed settings ON and leave every other
+        /// toggle alone (GUI import). false: the file is the complete selection (CLI).</param>
+        public static int ApplyConfiguration(ConfigurationProfile profile, IEnumerable<HardeningSetting> settings, bool additive = false)
         {
             int appliedCount = 0;
             var settingsList = settings.ToList();
@@ -151,6 +153,7 @@ namespace AtlantHarden.Services
                 // as enabled, or a later "Apply Selected" / silent run could remove it unreviewed.
                 bool shouldEnable = enabledIds.Contains(setting.Id)
                                     && setting.Category != SettingCategory.Bloatware;
+                if (additive && !shouldEnable) continue;
 
                 if (setting.IsEnabled != shouldEnable)
                 {

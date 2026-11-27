@@ -1593,7 +1593,14 @@ namespace AtlantHarden.ViewModels
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        ImportConfiguration(profile);
+                        // Additive: only switch ON the imported settings. Switching everything else
+                        // OFF would queue every applied-but-unlisted setting for revert on the next
+                        // "Apply Selected".
+                        var unknown = ImportConfiguration(profile, additive: true);
+                        if (unknown.Count > 0)
+                            MessageBox.Show($"{unknown.Count} setting(s) in this file aren't known to this version and were skipped:\n\n"
+                                + string.Join("\n", unknown.Take(15)) + (unknown.Count > 15 ? "\n…" : ""),
+                                "Some Settings Skipped", MessageBoxButton.OK, MessageBoxImage.Warning);
                         
                         // Track the imported settings
                         _importedProfileName = profile.Name;
@@ -1614,77 +1621,80 @@ namespace AtlantHarden.ViewModels
         }
 
         /// <summary>
-        /// Import a configuration profile (used by command line and UI)
+        /// Import a configuration profile (used by command line and UI). Returns the setting ids
+        /// in the file that this version doesn't know (renamed/removed between versions).
         /// </summary>
-        public void ImportConfiguration(ConfigurationService.ConfigurationProfile profile)
+        public List<string> ImportConfiguration(ConfigurationService.ConfigurationProfile profile, bool additive = false)
         {
             var allSettings = _hardeningService.GetAllSettings();
-            var changedCount = ConfigurationService.ApplyConfiguration(profile, allSettings);
-            
-            // Refresh the current view
+            ConfigurationService.ApplyConfiguration(profile, allSettings, additive);
+            var known = new HashSet<string>(allSettings.Select(s => s.Id));
+
             UpdateCategoryStatistics();
             FilterSettings();
-            
-            // Notify property changes for dashboard
-            OnPropertyChanged(nameof(SecurityScore));
-            OnPropertyChanged(nameof(SecurityLevel));
-            OnPropertyChanged(nameof(AppliedSettingsCount));
-            NotifyProfileAppliedCounts();
+            UpdateDashboardProperties();
+
+            return profile.EnabledSettingIds.Where(id => !known.Contains(id)).Distinct().ToList();
         }
 
+        /// <summary>Outcome of a command-line apply.</summary>
+        public sealed record CliApplyResult(int Applied, int AlreadyApplied, List<string> Failed, string BackupPath);
+
         /// <summary>
-        /// Apply all enabled settings (used for command line automation)
+        /// Apply all enabled settings that aren't applied yet (used for command line automation).
         /// </summary>
-        public async Task ApplyAllEnabledAsync()
+        public async Task<CliApplyResult> ApplyAllEnabledAsync()
         {
             // Silent CLI automation (--config --apply --silent) runs with no confirmation dialog,
             // so it must NEVER uninstall apps. Bloatware removal is destructive and machine-specific
             // and only ever happens through interactive, review-first selection.
-            var enabledSettings = _hardeningService.GetAllSettings()
+            var enabled = _hardeningService.GetAllSettings()
                 .Where(s => s.IsEnabled && s.Category != SettingCategory.Bloatware).ToList();
+            var toApply = enabled.Where(s => !s.IsApplied).ToList();
+            var failed = new List<string>();
+            int applied = 0;
 
-            if (enabledSettings.Count == 0)
-                return;
+            if (toApply.Count == 0)
+                return new CliApplyResult(0, enabled.Count, failed, "");
 
             IsProcessing = true;
-            ProgressMax = enabledSettings.Count;
+            ProgressMax = toApply.Count;
             ProgressValue = 0;
+            string backupPath = "";
 
             try
             {
-                // Create backup first
                 StatusMessage = "Creating backup...";
-                await _backupService.CreateBackupAsync(enabledSettings, "Command-line apply");
+                backupPath = (await _backupService.CreateBackupAsync(toApply, "Command-line apply")).FilePath;
 
-                int applied = 0;
-                int failed = 0;
+                // Same lock-out protection the GUI applies before enabling anything.
+                await SelfProtectionService.EnsureToolAllowlistedAsync();
 
-                foreach (var setting in enabledSettings)
+                foreach (var setting in toApply)
                 {
                     ProgressValue++;
                     StatusMessage = $"Applying: {setting.Name}";
 
-                    var success = await _hardeningService.ApplySettingAsync(setting);
-                    if (success)
-                    {
-                        setting.IsApplied = true;
-                        applied++;
-                    }
-                    else
-                    {
-                        failed++;
-                    }
+                    bool ok;
+                    try { ok = await _hardeningService.ApplyOrRevertSettingAsync(setting, true); }
+                    catch { ok = false; }
 
-                    _hardeningService.CheckCurrentStatus(setting);
+                    if (ok) { setting.IsApplied = true; applied++; }
+                    else failed.Add($"{setting.Id} ({setting.Name})");
                 }
 
-                StatusMessage = $"Complete: {applied} applied, {failed} failed";
+                if (toApply.Any(s => !string.IsNullOrEmpty(s.ASRGuid)))
+                    await _hardeningService.RefreshASRStatusAsync();
+                await _hardeningService.CheckAllStatusAsync();
                 UpdateCategoryStatistics();
+                StatusMessage = $"Complete: {applied} applied, {failed.Count} failed";
             }
             finally
             {
                 IsProcessing = false;
             }
+
+            return new CliApplyResult(applied, enabled.Count - toApply.Count, failed, backupPath);
         }
 
         #endregion

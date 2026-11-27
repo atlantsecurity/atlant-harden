@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows;
@@ -27,9 +29,27 @@ namespace AtlantHarden
         /// </summary>
         public static bool SilentMode { get; private set; }
 
+        [DllImport("kernel32.dll")]
+        private static extern bool AttachConsole(int dwProcessId);
+        private const int AttachParentProcess = -1;
+
+        // Exit codes for automation (--silent).
+        public const int ExitOk = 0, ExitError = 1, ExitBadArgs = 2, ExitSomeFailed = 3;
+
+        private static readonly List<string> ArgErrors = new();
+
         protected override async void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
+
+            // Parse first: silent mode changes how every message below is reported.
+            ParseCommandLine(e.Args);
+            if (SilentMode)
+            {
+                // WinExe has no console of its own; attach to the caller's so output is visible.
+                AttachConsole(AttachParentProcess);
+                ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            }
 
             // Global exception handlers
             DispatcherUnhandledException += (s, args) =>
@@ -59,14 +79,20 @@ namespace AtlantHarden
                 args.SetObserved(); // Prevent crash from fire-and-forget tasks
             };
 
-            // Parse command line arguments
-            ParseCommandLine(e.Args);
-
             // Handle --help
-            if (e.Args.Contains("--help") || e.Args.Contains("-h") || e.Args.Contains("/?"))
+            if (e.Args.Any(a => a is "--help" or "-h" or "/?"))
             {
                 ShowHelp();
-                Shutdown(0);
+                Shutdown(ExitOk);
+                return;
+            }
+
+            if (ArgErrors.Count > 0 || (SilentMode && (string.IsNullOrEmpty(ConfigFilePath) || !AutoApply)))
+            {
+                if (SilentMode && (string.IsNullOrEmpty(ConfigFilePath) || !AutoApply))
+                    ArgErrors.Add("--silent requires both --config <file> and --apply.");
+                Report("ERROR: " + string.Join("\n", ArgErrors) + "\nRun AtlantHarden.exe --help for usage.", isError: true);
+                Shutdown(ExitBadArgs);
                 return;
             }
 
@@ -76,17 +102,8 @@ namespace AtlantHarden
                 var message = "This application requires administrator privileges to modify system security settings.\n\n" +
                     "Please right-click the application and select 'Run as administrator'.";
                 
-                if (SilentMode)
-                {
-                    Console.Error.WriteLine("ERROR: " + message);
-                    Shutdown(1);
-                    return;
-                }
-                
-                MessageBox.Show(message, "Administrator Privileges Required",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                
-                Shutdown(1);
+                Report("ERROR: " + message, isError: true, title: "Administrator Privileges Required");
+                Shutdown(ExitError);
                 return;
             }
 
@@ -96,17 +113,8 @@ namespace AtlantHarden
                 var (isValid, validationMessage, _) = ConfigurationService.ValidateConfiguration(ConfigFilePath);
                 if (!isValid)
                 {
-                    var errorMsg = $"Invalid configuration file: {validationMessage}";
-                    if (SilentMode)
-                    {
-                        Console.Error.WriteLine("ERROR: " + errorMsg);
-                        Shutdown(1);
-                        return;
-                    }
-                    
-                    MessageBox.Show(errorMsg, "Configuration Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    Shutdown(1);
+                    Report($"ERROR: Invalid configuration file: {validationMessage}", isError: true, title: "Configuration Error");
+                    Shutdown(SilentMode ? ExitBadArgs : ExitError);
                     return;
                 }
             }
@@ -136,22 +144,31 @@ namespace AtlantHarden
                 // Apply configuration if provided
                 if (!string.IsNullOrEmpty(ConfigFilePath))
                 {
-                    if (!SilentMode) _splashScreen?.SetStatus("Applying configuration...");
+                    if (!SilentMode) _splashScreen?.SetStatus("Loading configuration...");
                     var profile = ConfigurationService.LoadConfiguration(ConfigFilePath);
-                    if (profile != null)
+                    if (profile == null)
                     {
-                        viewModel.ImportConfiguration(profile);
-                        
-                        // If auto-apply and silent mode, apply settings and exit
+                        Report($"ERROR: Could not load configuration: {ConfigFilePath}", isError: true, title: "Configuration Error");
+                        if (SilentMode) { Shutdown(ExitBadArgs); return; }
+                    }
+                    else
+                    {
+                        var unknown = viewModel.ImportConfiguration(profile);
+                        if (unknown.Count > 0)
+                            Report($"WARNING: {unknown.Count} setting id(s) in the configuration are not known to this version and were skipped: "
+                                   + string.Join(", ", unknown.Take(10)) + (unknown.Count > 10 ? ", …" : ""), isError: false);
+
                         if (AutoApply && SilentMode)
                         {
-                            Console.WriteLine($"Applying configuration: {profile.Name}");
-                            Console.WriteLine($"Settings to apply: {profile.EnabledCount}");
-                            
-                            await viewModel.ApplyAllEnabledAsync();
-                            
-                            Console.WriteLine("Configuration applied successfully.");
-                            Shutdown(0);
+                            Console.WriteLine($"AtlantHarden {ConfigurationService.CurrentAppVersion}: applying configuration '{profile.Name}'");
+                            var result = await viewModel.ApplyAllEnabledAsync();
+                            Console.WriteLine($"Applied: {result.Applied}  Already applied: {result.AlreadyApplied}  Failed: {result.Failed.Count}");
+                            foreach (var f in result.Failed)
+                                Console.Error.WriteLine($"FAILED: {f}");
+                            Console.WriteLine($"Backup: {result.BackupPath}");
+                            Console.WriteLine($"Log: {ActivityLog.LogPath}");
+                            ActivityLog.Write($"Silent apply '{profile.Name}': applied {result.Applied}, failed {result.Failed.Count}");
+                            Shutdown(result.Failed.Count == 0 ? ExitOk : ExitSomeFailed);
                             return;
                         }
                     }
@@ -174,15 +191,9 @@ namespace AtlantHarden
             }
             catch (Exception ex)
             {
-                var errorMsg = $"Error initializing application: {ex.Message}";
-                if (SilentMode)
-                {
-                    Console.Error.WriteLine("ERROR: " + errorMsg);
-                    Shutdown(1);
-                    return;
-                }
-                
-                MessageBox.Show(errorMsg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                Report($"ERROR: Error initializing application: {ex.Message}", isError: true, title: "Error");
+                Shutdown(ExitError);
+                return;
             }
             finally
             {
@@ -206,9 +217,9 @@ namespace AtlantHarden
                     case "--config":
                     case "-c":
                         if (i + 1 < args.Length)
-                        {
                             ConfigFilePath = args[++i];
-                        }
+                        else
+                            ArgErrors.Add("--config needs a file path.");
                         break;
                         
                     case "--apply":
@@ -219,6 +230,15 @@ namespace AtlantHarden
                     case "--silent":
                     case "-s":
                         SilentMode = true;
+                        break;
+
+                    case "--help":
+                    case "-h":
+                    case "/?":
+                        break;
+
+                    default:
+                        ArgErrors.Add($"Unknown option: {args[i]}");
                         break;
                 }
             }
@@ -248,14 +268,32 @@ Examples:
   AtlantHarden.exe --config myconfig.json --apply --silent
       Apply configuration silently and exit (for automation/scripts)
 
+Exit codes (--silent):
+  0  all settings applied        2  bad arguments or configuration
+  1  error (e.g. not elevated)   3  some settings failed (see output / log)
+
+Log: %LOCALAPPDATA%\AtlantHarden\Logs\activity.log
+
 Configuration Files:
   Export configurations from the app using File > Export Configuration.
   Configuration files are JSON format with enabled setting IDs.
 
 Note: Administrator privileges are required.
 ";
-            MessageBox.Show(help.Trim(), "AtlantHarden - Help", 
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            Report(help.Trim(), isError: false, title: "AtlantHarden - Help");
+        }
+
+        /// <summary>Console in silent mode (attached to the caller), a message box otherwise.</summary>
+        private static void Report(string message, bool isError, string title = "AtlantHarden")
+        {
+            ActivityLog.Write(message);
+            if (SilentMode)
+            {
+                if (isError) Console.Error.WriteLine(message); else Console.WriteLine(message);
+                return;
+            }
+            MessageBox.Show(message, title, MessageBoxButton.OK,
+                isError ? MessageBoxImage.Error : MessageBoxImage.Information);
         }
 
         private static bool IsRunningAsAdministrator()
