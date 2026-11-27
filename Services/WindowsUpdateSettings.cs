@@ -6,7 +6,7 @@ namespace AtlantHarden.Services
     /// <summary>
     /// Keep Windows, drivers/firmware, other Microsoft products (Office, .NET, ...), Store apps
     /// and browsers updating automatically. Unpatched software is one of the most common ways in,
-    /// so these are part of the Recommended profile. Policy values are removed on revert so the
+    /// so all of these are part of the Recommended profile. Policy values are removed on revert so the
     /// PC goes back to its own (or its organization's) Windows Update configuration.
     /// </summary>
     public static class WindowsUpdateSettings
@@ -111,7 +111,7 @@ namespace AtlantHarden.Services
                 new[] { "chrome", "browser", "updates" },
                 refs: new[] { "https://support.google.com/chrome/a/answer/6350036" }),
 
-            // ---- Maximum only -------------------------------------------------------------------
+            // ---- Always on, never postponed -------------------------------------------------------------------
             Reg("WU_LatestUpdatesAsap", "Get the latest updates as soon as they're available",
                 "Opts in to receiving new Windows features and non-security improvements early, as they roll out.",
                 Ux, "IsContinuousInnovationOptedIn", 1, 0, new[] { "windows update", "features" },
