@@ -212,13 +212,33 @@ namespace AtlantHarden.ViewModels
         public int TotalSettingsCount => _hardeningService.GetAllSettings().Count(s => s.Category != SettingCategory.Bloatware);
         public int AppliedSettingsCount => _hardeningService.GetAllSettings().Count(s => s.Category != SettingCategory.Bloatware && s.IsApplied);
         
+        // ---- Security Score -------------------------------------------------------------
+        // The score measures the RECOMMENDED profile only: the controls that stop real malware
+        // and exploitation. Applying Recommended = 100% / "Protected". The extra lockdowns that
+        // only Maximum adds (password managers off, InPrivate disabled, CFA, FIPS, ...) add
+        // friction and can break things, so they're shown separately as optional — never as a
+        // security gap. Settings whose state can't be read are left out of the maths rather than
+        // counted as failures.
+        private static bool IsVerifiable(HardeningSetting s) =>
+            s.CurrentValue is not ("Unknown" or "Check Failed" or "Error" or "Error reading" or "Pending...");
+
+        private List<HardeningSetting> ScoredSettings() =>
+            GetRecommendedProfileSettings().Where(IsVerifiable).ToList();
+
+        public int ScoreTotalCount => ScoredSettings().Count;
+        public int ScoreAppliedCount => ScoredSettings().Count(s => s.IsApplied);
+        public int UnverifiableCount => GetRecommendedProfileSettings().Count(s => !IsVerifiable(s));
+
         public int SecurityScore
         {
             get
             {
-                var total = TotalSettingsCount;
-                if (total == 0) return 0;
-                return (int)Math.Round((double)AppliedSettingsCount / total * 100);
+                var scored = ScoredSettings();
+                if (scored.Count == 0) return 0;
+                var applied = scored.Count(s => s.IsApplied);
+                // Only show 100 when truly complete (avoid rounding 99.6% up to "done").
+                if (applied == scored.Count) return 100;
+                return Math.Min(99, (int)Math.Round((double)applied / scored.Count * 100));
             }
         }
 
@@ -227,13 +247,23 @@ namespace AtlantHarden.ViewModels
             get
             {
                 var score = SecurityScore;
-                if (score >= 80) return "Excellent Protection";
-                if (score >= 60) return "Good Protection";
-                if (score >= 40) return "Moderate Protection";
-                if (score >= 20) return "Basic Protection";
-                return "Minimal Protection";
+                if (score >= 100) return "Protected — all Recommended protections are on";
+                if (score >= 90) return "Strong Protection";
+                if (score >= 60) return "Good Protection — a few gaps";
+                if (score >= 30) return "Partial Protection";
+                return "At Risk — apply the Recommended profile";
             }
         }
+
+        // Optional extra lockdown: Maximum-only settings (not part of the score).
+        private List<HardeningSetting> ExtraLockdownSettings()
+        {
+            var rec = new HashSet<HardeningSetting>(GetRecommendedProfileSettings());
+            return _hardeningService.GetAllSettings()
+                .Where(s => s.Category != SettingCategory.Bloatware && !rec.Contains(s)).ToList();
+        }
+        public int ExtraLockdownTotalCount => ExtraLockdownSettings().Count;
+        public int ExtraLockdownAppliedCount => ExtraLockdownSettings().Count(s => s.IsApplied);
 
         // STIG Compliance Properties
         public int STIGSettingsCount => _hardeningService.GetAllSettings().Count(s => s.IsStig);
@@ -735,6 +765,11 @@ namespace AtlantHarden.ViewModels
             OnPropertyChanged(nameof(SecurityLevel));
             OnPropertyChanged(nameof(AppliedSettingsCount));
             OnPropertyChanged(nameof(TotalSettingsCount));
+            OnPropertyChanged(nameof(ScoreAppliedCount));
+            OnPropertyChanged(nameof(ScoreTotalCount));
+            OnPropertyChanged(nameof(UnverifiableCount));
+            OnPropertyChanged(nameof(ExtraLockdownAppliedCount));
+            OnPropertyChanged(nameof(ExtraLockdownTotalCount));
             
             // Notify STIG compliance properties changed
             OnPropertyChanged(nameof(STIGSettingsCount));
@@ -1493,7 +1528,8 @@ namespace AtlantHarden.ViewModels
             sb.AppendLine("<div class='card'>");
             sb.AppendLine($"<div class='score'>{SecurityScore}/100</div>");
             sb.AppendLine($"<p>{SecurityLevel}</p>");
-            sb.AppendLine($"<p>{AppliedSettingsCount} of {TotalSettingsCount} settings applied</p>");
+            sb.AppendLine($"<p>{ScoreAppliedCount} of {ScoreTotalCount} Recommended protections applied (score = Recommended profile)</p>");
+            sb.AppendLine($"<p>Optional extra lockdown (Maximum only): {ExtraLockdownAppliedCount} of {ExtraLockdownTotalCount}</p>");
             sb.AppendLine("</div>");
 
             var groups = settings.GroupBy(s => s.Category).OrderBy(g => g.Key.ToString());
