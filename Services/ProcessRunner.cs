@@ -117,13 +117,14 @@ namespace AtlantHarden.Services
 
     /// <summary>
     /// Rolling plain-text log of every change command, its exit code and error output, at
-    /// %LOCALAPPDATA%\AtlantHarden\Logs\activity.log. Used for support and by silent mode.
+    /// %ProgramFiles%\AtlantHarden\Logs\activity.log. Used for support and by silent mode.
     /// </summary>
     public static class ActivityLog
     {
         private static readonly object Gate = new();
-        public static string LogDirectory { get; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AtlantHarden", "Logs");
+        // Admin-only location: the elevated app appends to and rotates this file, so it must not
+        // be somewhere an unelevated process could redirect with a junction (see SecurePaths).
+        public static string LogDirectory => SecurePaths.Logs;
         public static string LogPath => Path.Combine(LogDirectory, "activity.log");
 
         public static void Write(string message)
@@ -132,7 +133,7 @@ namespace AtlantHarden.Services
             {
                 lock (Gate)
                 {
-                    Directory.CreateDirectory(LogDirectory);
+                    SecurePaths.Ensure(LogDirectory);
                     var fi = new FileInfo(LogPath);
                     if (fi.Exists && fi.Length > 5 * 1024 * 1024)
                     {

@@ -19,13 +19,8 @@ namespace AtlantHarden.Services
 
         public BackupService()
         {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            _backupDirectory = Path.Combine(appData, "AtlantHarden", "Backups");
-            
-            if (!Directory.Exists(_backupDirectory))
-            {
-                Directory.CreateDirectory(_backupDirectory);
-            }
+            // Admin-only location: restore runs elevated and trusts these files (see SecurePaths).
+            _backupDirectory = SecurePaths.Ensure(SecurePaths.Backups);
         }
 
         public string BackupDirectory => _backupDirectory;
@@ -178,8 +173,30 @@ namespace AtlantHarden.Services
             if (backupData == null)
                 return new RestoreResult(false, 0, 0, 0, new List<string> { "Could not read backup file" }, skippedNames);
 
+            // Defence in depth: only touch registry values that belong to a setting this app
+            // manages (its primary or mirror path + value name). A backup file that names any other
+            // location is rejected entry by entry instead of being written as administrator.
+            HashSet<string>? allowed = null;
+            if (settingsById != null)
+            {
+                allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var s in settingsById.Values)
+                {
+                    if (s.Type != SettingType.Registry || string.IsNullOrEmpty(s.RegistryKey)) continue;
+                    allowed.Add(NormKey(s.RegistryPath, s.RegistryKey));
+                    if (s.MirrorRegistryPaths != null)
+                        foreach (var m in s.MirrorRegistryPaths) allowed.Add(NormKey(m, s.RegistryKey));
+                }
+            }
+
             foreach (var entry in backupData.RegistryEntries)
             {
+                if (allowed != null && !allowed.Contains(NormKey(entry.Path, entry.KeyName)))
+                {
+                    failed++;
+                    errors.Add($"Rejected (not a setting this app manages): {entry.Path}\\{entry.KeyName}");
+                    continue;
+                }
                 try
                 {
                     bool ok;
@@ -236,6 +253,10 @@ namespace AtlantHarden.Services
 
             return new RestoreResult(failed == 0, restored, failed, skipped, errors, skippedNames);
         }
+
+        private static string NormKey(string path, string key) =>
+            (path.Replace("HKEY_LOCAL_MACHINE", "HKLM").Replace("HKEY_CURRENT_USER", "HKCU").TrimEnd('\\') + "|" + key)
+                .ToUpperInvariant();
 
         /// <summary>
         /// Convert a value read back from backup JSON to the CLR type the registry API expects.

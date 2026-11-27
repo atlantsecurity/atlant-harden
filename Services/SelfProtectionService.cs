@@ -17,6 +17,9 @@ namespace AtlantHarden.Services
     /// AtlantHarden.exe elsewhere are removed. The exclusions are ASR/CFA-only: they do not
     /// exempt the file from antivirus scanning.
     ///
+    /// The protected copy must carry a valid Atlant Security Authenticode signature; unsigned
+    /// (developer) builds are never copied into Program Files or allow-listed.
+    ///
     /// Note: the Explorer SmartScreen hard-block level is deliberately kept out of the
     /// Recommended profile so SmartScreen stays at the overridable "Warn" level.
     /// </summary>
@@ -62,6 +65,16 @@ namespace AtlantHarden.Services
                     }
                 }
                 if (!File.Exists(target)) return;
+
+                // Only a genuine, Atlant-signed copy may sit in Program Files with Defender
+                // exclusions. The source may have come from a user-writable folder and been
+                // swapped, so verify the copy we're about to trust (it's now in an admin-only folder).
+                if (!AuthenticodeVerifier.IsSignedByAtlant(target, out var why))
+                {
+                    ActivityLog.Write($"Self-protection skipped: {target} is not Atlant-signed ({why}).");
+                    try { File.Delete(target); } catch { }
+                    return;
+                }
 
                 var p = target.Replace("'", "''");
                 var script =

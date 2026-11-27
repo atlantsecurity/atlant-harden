@@ -33,7 +33,7 @@ UNDO
 AUTOMATION
   AtlantHarden.exe --config my.json --apply --silent
   Exit codes: 0 ok, 1 error, 2 bad arguments/config, 3 some settings failed.
-  Log: %LOCALAPPDATA%\AtlantHarden\Logs\activity.log
+  Log: %ProgramFiles%\AtlantHarden\Logs\activity.log
 
 LICENSE
   Free to use as long as you don't charge for its use. Charging for its use, or

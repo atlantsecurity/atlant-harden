@@ -273,7 +273,7 @@ Exit codes (--silent):
   0  all settings applied        2  bad arguments or configuration
   1  error (e.g. not elevated)   3  some settings failed (see output / log)
 
-Log: %LOCALAPPDATA%\AtlantHarden\Logs\activity.log
+Log: %ProgramFiles%\AtlantHarden\Logs\activity.log
 
 Configuration Files:
   Export configurations from the app using File > Export Configuration.

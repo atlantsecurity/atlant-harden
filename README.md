@@ -153,7 +153,7 @@ Examples:
       Apply configuration silently and exit (for automation/scripts)
 ```
 
-`--silent` prints results to the calling console and requires both `--config` and `--apply`. Every change command, its exit code and error output is logged to `%LOCALAPPDATA%\AtlantHarden\Logs\activity.log`.
+`--silent` prints results to the calling console and requires both `--config` and `--apply`. Every change command, its exit code and error output is logged to `%ProgramFiles%\AtlantHarden\Logs\activity.log`.
 
 ## Usage
 
