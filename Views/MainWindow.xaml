@@ -3,6 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:AtlantHarden.ViewModels"
         xmlns:local="clr-namespace:AtlantHarden.Views"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel, IsDesignTimeCreatable=False}"
         Title="AtlantHarden - Windows Hardening Tool"
         Height="820" Width="1280"
         MinHeight="540" MinWidth="820"
@@ -10,9 +14,6 @@
         Background="{StaticResource BackgroundDarkBrush}"
         KeyDown="Window_KeyDown">
     
-    <Window.DataContext>
-        <vm:MainViewModel/>
-    </Window.DataContext>
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>

@@ -137,6 +137,14 @@ namespace AtlantHarden.Models
             }
         }
 
+        /// <summary>
+        /// For numeric registry policies where a HIGHER value is stricter (e.g. LDAP client
+        /// signing 1 = negotiate, 2 = require). A current value at or above the recommended one
+        /// counts as applied and is never lowered, so overlapping baselines (STIG, ACSC, curated)
+        /// that ask for different levels end at the strictest instead of "last write wins".
+        /// </summary>
+        public bool AtLeast { get; set; }
+
         // Tags for filtering and grouping
         public string[] Tags { get; set; } = Array.Empty<string>();
         
