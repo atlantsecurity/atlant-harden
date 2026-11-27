@@ -12,6 +12,7 @@ The full set is documented **one page per category** — click a page for its co
 |---|---:|
 | [Attack Surface Reduction (ASR)](settings/attack-surface-reduction-asr.md) | 18 |
 | [Microsoft Defender Antivirus](settings/microsoft-defender-antivirus.md) | 6 |
+| [Windows Update](settings/windows-update.md) | 15 |
 | [Credential Protection](settings/credential-protection.md) | 12 |
 | [Network Security](settings/network-security.md) | 26 |
 | [System Hardening](settings/system-hardening.md) | 18 |
@@ -33,5 +34,5 @@ The full set is documented **one page per category** — click a page for its co
 | [DISA STIG — Microsoft Office 365 ProPlus (V3R5) &mdash; Part 1 of 2](settings/disa-stig-microsoft-office-365-proplus-v3r5-part-1.md) | 33 |
 | [DISA STIG — Microsoft Office 365 ProPlus (V3R5) &mdash; Part 2 of 2](settings/disa-stig-microsoft-office-365-proplus-v3r5-part-2.md) | 44 |
 
-**Total: 325 settings.**
+**Total: 340 settings.**
 
