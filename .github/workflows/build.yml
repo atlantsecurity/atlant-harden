@@ -1,0 +1,34 @@
+name: build
+
+on:
+  push:
+    branches: [main, 'release/**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        run: dotnet build AtlantHarden.csproj -c Release
+
+      - name: Test
+        run: dotnet test tests/AtlantHarden.Tests/AtlantHarden.Tests.csproj -c Release --logger "console;verbosity=normal"
+
+      - name: Publish (self-contained single file)
+        run: >
+          dotnet publish AtlantHarden.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true -o publish
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: AtlantHarden-unsigned
+          path: publish/AtlantHarden.exe

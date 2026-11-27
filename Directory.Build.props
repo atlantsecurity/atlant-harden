@@ -1,0 +1,7 @@
+<Project>
+  <!-- Local dev only: keep obj/ out of OneDrive-synced folders (long paths, file locks).
+       Must be set before the SDK is imported, hence Directory.Build.props. CI uses the default. -->
+  <PropertyGroup Condition="'$(CI)' != 'true' and '$(OS)' == 'Windows_NT' and '$(MSBuildProjectName)' == 'AtlantHarden'">
+    <BaseIntermediateOutputPath>C:\Temp\AtlantBuild\obj\</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
