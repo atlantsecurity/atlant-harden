@@ -1,0 +1,44 @@
+AtlantHarden v2.2 - Windows Security Hardening Tool
+===================================================
+
+WHAT'S IN THIS PACKAGE
+  AtlantHarden.exe                  The application (self-contained - no .NET install needed),
+                                    code-signed by Atlant Security LTD
+  README.md                         Full documentation
+  LICENSE.txt                       Application license (read before any commercial use)
+  Recommended-Settings-Explained.md The Recommended settings, explained one by one (what & why)
+  Maximum-Settings-Explained.md     All settings explained; marks Recommended vs Maximum-only
+
+RUN
+  1. Right-click AtlantHarden.exe  ->  "Run as administrator".
+  2. On first launch, accept the offer to create a System Restore point.
+  3. On each profile, click "Show settings" to review what it changes, then "Apply".
+  4. After the first apply, a protected copy is installed to Program Files and added to the
+     Start menu as "AtlantHarden" - launch it from there from then on.
+
+SECURITY SCORE
+  The score measures the Recommended profile. Apply Recommended = 100% "Protected".
+  Maximum-only lockdowns are optional extras and never count against you.
+
+PROFILES
+  Basic        - highest-impact core, zero friction
+  Recommended  - stops real malware/exploits, skips crippling lockdowns (default)
+  Maximum      - everything, incl. strict DISA STIG lockdowns (adds friction, can break apps)
+
+UNDO
+  Every apply creates a backup first (Backups & Restore). Restore puts back registry values,
+  Defender/ASR, firewall, audit-policy and file-association changes. The very first backup is
+  kept forever as the PC's original state. Removed apps are not reinstalled automatically.
+
+AUTOMATION
+  AtlantHarden.exe --config my.json --apply --silent
+  Exit codes: 0 ok, 1 error, 2 bad arguments/config, 3 some settings failed.
+  Log: %LOCALAPPDATA%\AtlantHarden\Logs\activity.log
+
+LICENSE
+  Free to use as long as you don't charge for its use. Charging for its use, or
+  using it to secure clients' or commercial systems for a fee, requires a
+  commercial license from Atlant Security LTD:  https://atlantsecurity.com/contact
+  See LICENSE.txt for the full terms.
+
+(c) 2026 Atlant Security LTD - https://atlantsecurity.com

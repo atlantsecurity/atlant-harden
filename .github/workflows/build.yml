@@ -22,6 +22,14 @@ jobs:
       - name: Test
         run: dotnet test tests/AtlantHarden.Tests/AtlantHarden.Tests.csproj -c Release --logger "console;verbosity=normal"
 
+      - name: Check generated settings docs are current
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          ./tools/Dump-Settings.ps1
+          ./tools/Generate-SettingsDocs.ps1
+          git diff --stat --exit-code -- docs
+
       - name: Publish (self-contained single file)
         run: >
           dotnet publish AtlantHarden.csproj -c Release -r win-x64 --self-contained true

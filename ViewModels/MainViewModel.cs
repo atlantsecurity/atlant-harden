@@ -658,7 +658,7 @@ namespace AtlantHarden.ViewModels
                 "• LOLBin Firewall Rules - blocks admin tools (certutil, wmic, etc.)\n" +
                 "• IPv6 Disabled - may break Microsoft services\n" +
                 "• DCOM Disabled - breaks remote administration\n" +
-                "• SmartScreen hard-block - may block launching this (unsigned) tool again\n\n" +
+                "• SmartScreen hard-block - blocks running unrecognised downloads\n\n" +
                 "If you ever get locked out, you can revert WITHOUT this tool:\n" +
                 "  • double-click the restore_*.reg file in the Backups folder, or\n" +
                 "  • use Windows System Restore.\n\n" +
