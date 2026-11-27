@@ -80,7 +80,7 @@ DISA releases and loaded from an auditable, regenerable catalog (`Resources/stig
 ### 🎚️ One-Click Profiles (review before you apply)
 Three curated profiles, each with **Apply** and a **Show settings** button that opens a scrollable review of every setting (name, description, registry change, current vs. recommended value) before anything is applied:
 - **Basic** (95 settings) - the highest-impact, effectively zero-friction core
-- **Recommended** (337 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
+- **Recommended** (340 settings) - the smart default: applies the controls that stop real malware and exploitation (ASR, Defender, SmartScreen, macro/script blocking, credential-theft protection, exploit mitigations) while deliberately **skipping** high-friction lockdowns. It does **not** disable browser password managers, InPrivate/Incognito, history deletion, Controlled Folder Access, FIPS, or a BitLocker pre-boot PIN — and is already gaming- and performance-safe.
 - **Maximum** (621 settings) - everything, including the strict DISA STIG lockdowns
 
 Bloatware removal and the privacy cleanup are kept **separate** from these profiles — they're reached from the dashboard's **Cleanup & Privacy** section (a one-click *Tighten Up Privacy* and a review-first *Clean Up Bloat*), so applying a security profile never uninstalls an app.
