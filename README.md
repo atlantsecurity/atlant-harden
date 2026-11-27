@@ -6,7 +6,7 @@ AtlantHarden is a comprehensive Windows 10/11 security hardening application wit
 
 ## ⬇️ Download
 
-### [Download AtlantHarden v2.2 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
+### [Download AtlantHarden v2.3 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
 
 Single `.zip`, ~63 MB, **self-contained** — no .NET install required. `AtlantHarden.exe` is **code-signed by Atlant Security LTD**. Extract it, then right-click `AtlantHarden.exe` → **Run as administrator**. See all [releases and notes](https://github.com/atlantsecurity/atlant-harden/releases/latest).
 
