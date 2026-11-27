@@ -55,4 +55,14 @@
     <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
     <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource BorderLightColor}"/>
     
+    <!-- Text shades used across MainWindow (centralised so the palette can be themed) -->
+    <SolidColorBrush x:Key="TextHeadingBrush" Color="#F0F6FC"/>
+    <SolidColorBrush x:Key="TextBodyBrush" Color="#C9D1D9"/>
+    <SolidColorBrush x:Key="SuccessTextBrush" Color="#3FB950"/>
+    <SolidColorBrush x:Key="AlertRedBrush" Color="#D93025"/>
+    <!-- Translucent badge backgrounds -->
+    <SolidColorBrush x:Key="SuccessBadgeBrush" Color="#1A238636"/>
+    <SolidColorBrush x:Key="WarningBadgeBrush" Color="#1AD29922"/>
+    <SolidColorBrush x:Key="InfoBadgeBrush" Color="#1A58A6FF"/>
+    <SolidColorBrush x:Key="DangerBadgeBrush" Color="#1ADA3633"/>
 </ResourceDictionary>

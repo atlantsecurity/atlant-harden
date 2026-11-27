@@ -187,6 +187,7 @@ namespace AtlantHarden
 
                     MainWindow = mainWindow;
                     mainWindow.Show();
+                    _ = viewModel.OfferFirstRunRestorePointAsync();
                 }
             }
             catch (Exception ex)

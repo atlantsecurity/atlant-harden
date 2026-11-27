@@ -23,6 +23,9 @@ namespace AtlantHarden.ViewModels
 
         public MainViewModel()
         {
+            // Debounce search so typing doesn't rebuild the list on every keystroke.
+            _searchDebounce = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _searchDebounce.Tick += (_, _) => { _searchDebounce.Stop(); FilterSettings(); };
             _hardeningService = new HardeningService();
             _backupService = new BackupService();
 
@@ -33,6 +36,18 @@ namespace AtlantHarden.ViewModels
 
             InitializeCommands();
             InitializeCategories();
+
+            // Keep the "N pending changes" bar live as toggles change anywhere.
+            foreach (var s in _hardeningService.GetAllSettings())
+                s.PropertyChanged += (_, e) =>
+                {
+                    if (e.PropertyName is nameof(HardeningSetting.IsEnabled) or nameof(HardeningSetting.IsApplied))
+                    {
+                        OnPropertyChanged(nameof(PendingChangesCount));
+                        OnPropertyChanged(nameof(HasPendingChanges));
+                    }
+                };
+
 
             // Start with Dashboard
             CurrentView = "Dashboard";
@@ -149,14 +164,16 @@ namespace AtlantHarden.ViewModels
         public int ProgressValue
         {
             get => _progressValue;
-            set => SetProperty(ref _progressValue, value);
+            set { if (SetProperty(ref _progressValue, value)) OnPropertyChanged(nameof(ProgressText)); }
         }
 
         public int ProgressMax
         {
             get => _progressMax;
-            set => SetProperty(ref _progressMax, value);
+            set { if (SetProperty(ref _progressMax, value)) OnPropertyChanged(nameof(ProgressText)); }
         }
+
+        private readonly System.Windows.Threading.DispatcherTimer _searchDebounce;
 
         public string SearchText
         {
@@ -165,10 +182,26 @@ namespace AtlantHarden.ViewModels
             {
                 if (SetProperty(ref _searchText, value))
                 {
-                    FilterSettings();
+                    _searchDebounce.Stop();
+                    _searchDebounce.Start();
                 }
             }
         }
+
+        private int _selectedStatusFilter;
+        /// <summary>0 All, 1 Not applied, 2 Applied, 3 Can't verify, 4 Pending changes.</summary>
+        public int SelectedStatusFilter
+        {
+            get => _selectedStatusFilter;
+            set { if (SetProperty(ref _selectedStatusFilter, value)) FilterSettings(); }
+        }
+
+        /// <summary>Settings whose toggle differs from the PC (what Apply Selected will change).</summary>
+        public int PendingChangesCount => _hardeningService.GetAllSettings().Count(s => s.HasPendingChange);
+        public bool HasPendingChanges => PendingChangesCount > 0;
+
+        /// <summary>Per-user (HKCU) settings are written for this account.</summary>
+        public string PerUserTargetText => $"Per-user settings apply to: {RegistryService.TargetUserName}";
 
         public string CurrentView
         {
@@ -447,6 +480,37 @@ namespace AtlantHarden.ViewModels
         // Configuration Import/Export Commands
         public ICommand ExportConfigurationCommand { get; private set; } = null!;
         public ICommand ImportConfigurationCommand { get; private set; } = null!;
+        public ICommand CopyTextCommand { get; private set; } = null!;
+        public ICommand OpenReferenceCommand { get; private set; } = null!;
+        public ICommand ShowPendingChangesCommand { get; private set; } = null!;
+        public ICommand CancelOperationCommand { get; private set; } = null!;
+        public ICommand OpenLogFolderCommand { get; private set; } = null!;
+
+        private bool _cancelRequested;
+        private bool _canCancel;
+        /// <summary>True while a long apply is running that can stop after the current setting.</summary>
+        public bool CanCancel { get => _canCancel; set => SetProperty(ref _canCancel, value); }
+
+        /// <summary>"12 of 325" for the progress overlay.</summary>
+        public string ProgressText => ProgressMax > 0 && IsProcessing ? $"{ProgressValue} of {ProgressMax}" : string.Empty;
+
+        private void OpenReference(string? url)
+        {
+            // Only http(s) links from the built-in catalog; open in the default browser.
+            if (string.IsNullOrEmpty(url) || !Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)) return;
+            try { Process.Start(new ProcessStartInfo { FileName = uri.AbsoluteUri, UseShellExecute = true }); } catch { }
+        }
+
+        private void OpenFolder(string path)
+        {
+            try
+            {
+                Directory.CreateDirectory(path);
+                Process.Start(new ProcessStartInfo { FileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), Arguments = $"\"{path}\"", UseShellExecute = false });
+            }
+            catch { }
+        }
 
         private void InitializeCommands()
         {
@@ -481,6 +545,11 @@ namespace AtlantHarden.ViewModels
             
             // Configuration Import/Export
             ExportConfigurationCommand = new RelayCommand(ExportConfiguration);
+            CopyTextCommand = new RelayCommand(p => { if (p is string s && s.Length > 0) { try { Clipboard.SetText(s); StatusMessage = "Copied to clipboard"; } catch { } } });
+            OpenReferenceCommand = new RelayCommand(p => OpenReference(p as string));
+            ShowPendingChangesCommand = new RelayCommand(() => { ShowAllSettings(); SelectedStatusFilter = 4; });
+            CancelOperationCommand = new RelayCommand(() => { _cancelRequested = true; StatusMessage = "Cancelling after the current setting..."; }, () => IsProcessing && CanCancel);
+            OpenLogFolderCommand = new RelayCommand(() => OpenFolder(ActivityLog.LogDirectory));
             ImportConfigurationCommand = new RelayCommand(ImportConfigurationFromFile);
         }
 
@@ -950,7 +1019,7 @@ namespace AtlantHarden.ViewModels
         {
             IEnumerable<HardeningSetting> baseSettings;
 
-            if (string.IsNullOrWhiteSpace(SearchText) && SelectedRiskFilter == 0)
+            if (string.IsNullOrWhiteSpace(SearchText) && SelectedRiskFilter == 0 && SelectedStatusFilter == 0)
             {
                 RefreshSettingsList();
                 return;
@@ -972,11 +1041,14 @@ namespace AtlantHarden.ViewModels
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
+                var q = SearchText.Trim();
+                bool Has(string? v) => !string.IsNullOrEmpty(v) && v.Contains(q, StringComparison.OrdinalIgnoreCase);
                 filtered = filtered.Where(s =>
-                    s.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                    s.Description.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                    s.Tags.Any(t => t.Contains(SearchText, StringComparison.OrdinalIgnoreCase)) ||
-                    s.Category.ToString().Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                    Has(s.Name) || Has(s.Description) || Has(s.Id) ||
+                    s.Tags.Any(Has) ||
+                    Has(s.Category.ToString()) || Has(s.CategoryDisplay) ||
+                    Has(s.RegistryKey) || Has(s.RegistryPath) ||
+                    Has(s.StigId) || Has(s.VulnId) || (s.Ccis?.Any(Has) ?? false));
             }
 
             // Apply risk/compliance filter
@@ -994,9 +1066,18 @@ namespace AtlantHarden.ViewModels
                 case 8: filtered = filtered.Where(s => s.IsStig && s.Risk == RiskLevel.Low); break;
             }
 
+            filtered = SelectedStatusFilter switch
+            {
+                1 => filtered.Where(s => s.IsVerifiable && !s.IsApplied),
+                2 => filtered.Where(s => s.IsApplied),
+                3 => filtered.Where(s => !s.IsVerifiable),
+                4 => filtered.Where(s => s.HasPendingChange),
+                _ => filtered
+            };
+
             var filteredList = filtered.ToList();
             foreach (var setting in filteredList)
-                _hardeningService.CheckCurrentStatus(setting);   // refresh status before sorting
+                _hardeningService.CheckCurrentStatus(setting);   // cheap: registry reads only
             CurrentSettings.Clear();
             foreach (var setting in SortForReview(filteredList))
                 CurrentSettings.Add(setting);
@@ -1037,19 +1118,25 @@ namespace AtlantHarden.ViewModels
                 return;
             }
 
-            var message = new StringBuilder();
-            message.AppendLine($"Changes to apply:");
-            if (settingsToApply.Count > 0)
-                message.AppendLine($"  • Enable {settingsToApply.Count} settings");
-            if (settingsToDisable.Count > 0)
-                message.AppendLine($"  • Disable {settingsToDisable.Count} settings");
-            message.AppendLine();
-            message.AppendLine("A backup will be created first. Continue?");
+            // Show exactly what will change, not just counts — reverts and app removals
+            // especially must never be a surprise.
+            var details = new StringBuilder();
+            void Section(string title, IEnumerable<HardeningSetting> items)
+            {
+                var list = items.ToList();
+                if (list.Count == 0) return;
+                details.AppendLine($"{title} ({list.Count}):");
+                foreach (var s in list.OrderBy(s => s.CategoryDisplay).ThenBy(s => s.Name))
+                    details.AppendLine($"  • [{s.CategoryDisplay}] {s.Name}");
+                details.AppendLine();
+            }
+            Section("REMOVE APPS — cannot be undone automatically", settingsToApply.Where(s => s.Category == SettingCategory.Bloatware));
+            Section("Apply", settingsToApply.Where(s => s.Category != SettingCategory.Bloatware));
+            Section("Revert (switched off)", settingsToDisable);
 
-            var result = MessageBox.Show(message.ToString(), "Confirm Apply", 
-                MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-            if (result != MessageBoxResult.Yes) return;
+            var summary = $"{settingsToApply.Count} to apply, {settingsToDisable.Count} to revert. A backup is created first.";
+            if (!Views.ResultDialog.Confirm("Review Changes", summary, details.ToString().TrimEnd()))
+                return;
 
             await ApplySettingsWithStateAsync(settingsToApply, settingsToDisable);
         }
@@ -1060,6 +1147,9 @@ namespace AtlantHarden.ViewModels
             IsProcessing = true;
             ProgressValue = 0;
             ProgressMax = toEnable.Count + toDisable.Count;
+            _cancelRequested = false;
+            CanCancel = true;
+            bool cancelled = false;
 
             var errors = new List<string>();
 
@@ -1091,6 +1181,7 @@ namespace AtlantHarden.ViewModels
                 // Enable settings
                 foreach (var setting in toEnable)
                 {
+                    if (_cancelRequested) { cancelled = true; break; }
                     StatusMessage = $"Enabling: {setting.Name}";
                     
                     try
@@ -1130,6 +1221,7 @@ namespace AtlantHarden.ViewModels
                 // Disable settings
                 foreach (var setting in toDisable)
                 {
+                    if (_cancelRequested) { cancelled = true; break; }
                     StatusMessage = $"Disabling: {setting.Name}";
 
                     var identity = HardeningService.RegistryIdentity(setting);
@@ -1166,6 +1258,8 @@ namespace AtlantHarden.ViewModels
                     await Task.Yield();
                 }
 
+                CanCancel = false;
+
                 // Refresh status to verify changes - force ASR refresh
                 StatusMessage = "Verifying changes...";
                 
@@ -1194,43 +1288,44 @@ namespace AtlantHarden.ViewModels
                     .ToList();
 
                 var sb = new StringBuilder();
-                sb.AppendLine($"✓ Applied {succeeded.Count} of {totalSelected} settings");
-
-                if (pending.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine($"ℹ {pending.Count} applied but not auto-confirmed (they ran OK; some need a restart to take effect):");
-                    foreach (var s in pending.Take(12))
-                        sb.AppendLine($"   • {s.Name}");
-                    if (pending.Count > 12)
-                        sb.AppendLine($"   …and {pending.Count - 12} more");
-                }
-
-                if (keptShared.Count > 0)
-                {
-                    sb.AppendLine();
-                    sb.AppendLine($"ℹ {keptShared.Count} kept on because another enabled setting writes the same value:");
-                    foreach (var s in keptShared.Take(8))
-                        sb.AppendLine($"   • {s.Name}");
-                }
-
                 if (failCount > 0)
                 {
+                    sb.AppendLine($"FAILED ({failCount}):");
+                    foreach (var error in errors) sb.AppendLine("  " + error);
+                    sb.AppendLine("  (Error output for each command is in the activity log.)");
                     sb.AppendLine();
-                    sb.AppendLine($"✗ {failCount} failed:");
-                    foreach (var error in errors.Take(10))
-                        sb.AppendLine(error);
-                    if (errors.Count > 10)
-                        sb.AppendLine($"…and {errors.Count - 10} more");
                 }
+                if (pending.Count > 0)
+                {
+                    sb.AppendLine($"Applied but not confirmed yet ({pending.Count}) — they ran OK; some take effect after a restart:");
+                    foreach (var s in pending) sb.AppendLine($"  • {s.Name}");
+                    sb.AppendLine();
+                }
+                if (keptShared.Count > 0)
+                {
+                    sb.AppendLine($"Kept on ({keptShared.Count}) — another enabled setting writes the same value:");
+                    foreach (var s in keptShared) sb.AppendLine($"  • {s.Name}");
+                    sb.AppendLine();
+                }
+                var needRestart = succeeded.Where(s => s.RequiresReboot).ToList();
+                if (needRestart.Count > 0)
+                {
+                    sb.AppendLine($"Need a restart to take effect ({needRestart.Count}):");
+                    foreach (var s in needRestart) sb.AppendLine($"  • {s.Name}");
+                    sb.AppendLine();
+                }
+                sb.AppendLine($"Succeeded ({succeeded.Count}):");
+                foreach (var s in succeeded) sb.AppendLine($"  ✓ {s.Name}");
 
-                sb.AppendLine();
-                sb.AppendLine("💾 Backup created in Backups folder");
+                var summaryLine = $"{(cancelled ? "Cancelled. " : "")}Applied {succeeded.Count} of {totalSelected} changes"
+                    + (failCount > 0 ? $", {failCount} failed" : "")
+                    + ". A backup was created first (Backups & Restore)."
+                    + (SelfProtectionService.HasProtectedCopy && toEnable.Any()
+                        ? "\nTip: launch AtlantHarden from the Start menu from now on (protected copy in Program Files)." : "");
 
-                StatusMessage = $"Complete: {succeeded.Count} of {totalSelected} applied";
-                
-                MessageBox.Show(sb.ToString(), "Apply Complete", MessageBoxButton.OK, 
-                    failCount > 0 ? MessageBoxImage.Warning : MessageBoxImage.Information);
+                StatusMessage = $"{(cancelled ? "Cancelled: " : "Complete: ")}{succeeded.Count} of {totalSelected} applied";
+                Views.ResultDialog.ShowResult(failCount > 0 ? "Apply Finished With Errors" : "Apply Complete",
+                    summaryLine, sb.ToString().TrimEnd(), offerRestart: needRestart.Count > 0, logFolder: ActivityLog.LogDirectory);
             }
             catch (Exception ex)
             {
@@ -1239,6 +1334,7 @@ namespace AtlantHarden.ViewModels
             }
             finally
             {
+                CanCancel = false;
                 IsProcessing = false;
             }
         }
@@ -1337,6 +1433,30 @@ namespace AtlantHarden.ViewModels
             {
                 IsProcessing = false;
             }
+        }
+
+        /// <summary>
+        /// First launch on this PC: offer to create a System Restore point before anything is
+        /// changed (replaces relying on the red banner). Asked once.
+        /// </summary>
+        public async Task OfferFirstRunRestorePointAsync()
+        {
+            try
+            {
+                var marker = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "AtlantHarden", "first-run-done");
+                if (File.Exists(marker)) return;
+                Directory.CreateDirectory(Path.GetDirectoryName(marker)!);
+                File.WriteAllText(marker, DateTime.Now.ToString("o"));
+
+                var answer = MessageBox.Show(
+                    "Welcome to AtlantHarden.\n\nBefore changing anything, create a Windows System Restore point? " +
+                    "It's the safest way back if a setting ever causes trouble. (Takes about a minute.)",
+                    "Create a restore point first?", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                if (answer == MessageBoxResult.Yes)
+                    await CreateRestorePointAsync();
+            }
+            catch { }
         }
 
         /// <summary>Make every (non-bloatware) toggle match what is actually applied on the PC.</summary>
@@ -1598,8 +1718,9 @@ namespace AtlantHarden.ViewModels
                         return;
                     }
 
-                    // Ask for profile name
-                    var profileName = "Custom Profile";
+                    // The file name the user chose doubles as the profile name.
+                    var profileName = Path.GetFileNameWithoutExtension(dialog.FileName);
+                    if (string.IsNullOrWhiteSpace(profileName)) profileName = "Custom Profile";
                     
                     if (ConfigurationService.ExportConfiguration(allSettings, dialog.FileName, profileName))
                     {

@@ -51,6 +51,37 @@ namespace AtlantHarden.Models
         StigOffice365
     }
 
+    /// <summary>Human-readable names for <see cref="SettingCategory"/>.</summary>
+    public static class CategoryNames
+    {
+        public static string Display(SettingCategory c) => c switch
+        {
+            SettingCategory.WindowsDefender => "Microsoft Defender",
+            SettingCategory.AttackSurfaceReduction => "Attack Surface Reduction",
+            SettingCategory.NetworkSecurity => "Network Security",
+            SettingCategory.CredentialProtection => "Credential Protection",
+            SettingCategory.EdgeHardening => "Microsoft Edge",
+            SettingCategory.ChromeHardening => "Google Chrome",
+            SettingCategory.FirefoxHardening => "Mozilla Firefox",
+            SettingCategory.OfficeHardening => "Microsoft Office",
+            SettingCategory.Privacy => "Privacy",
+            SettingCategory.Logging => "Logging & Auditing",
+            SettingCategory.FileAssociations => "File Associations",
+            SettingCategory.Firewall => "Windows Firewall",
+            SettingCategory.TLSCrypto => "TLS & Cryptography",
+            SettingCategory.SystemHardening => "System Hardening",
+            SettingCategory.RemovalMedia => "Removable Media",
+            SettingCategory.AdobeReader => "Adobe Reader",
+            SettingCategory.Bloatware => "Bloatware",
+            SettingCategory.StigWindows11 => "STIG · Windows 11",
+            SettingCategory.StigEdge => "STIG · Edge",
+            SettingCategory.StigChrome => "STIG · Chrome",
+            SettingCategory.StigFirefox => "STIG · Firefox",
+            SettingCategory.StigOffice365 => "STIG · Office 365",
+            _ => c.ToString()
+        };
+    }
+
     public class HardeningSetting : INotifyPropertyChanged
     {
         private bool _isEnabled;
@@ -107,6 +138,8 @@ namespace AtlantHarden.Models
                 {
                     _isEnabled = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(PendingState));
+                    OnPropertyChanged(nameof(HasPendingChange));
                 }
             }
         }
@@ -120,6 +153,9 @@ namespace AtlantHarden.Models
                 {
                     _isApplied = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(PendingState));
+                    OnPropertyChanged(nameof(HasPendingChange));
+                    OnPropertyChanged(nameof(StatusText));
                 }
             }
         }
@@ -133,6 +169,9 @@ namespace AtlantHarden.Models
                 {
                     _currentValue = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsVerifiable));
+                    OnPropertyChanged(nameof(StatusText));
+                    OnPropertyChanged(nameof(CurrentValueDisplay));
                 }
             }
         }
@@ -174,6 +213,64 @@ namespace AtlantHarden.Models
         
         // ASR Rule GUID (for Attack Surface Reduction rules)
         public string? ASRGuid { get; set; }
+
+        // ---- Display helpers (UI) -------------------------------------------------------
+
+        /// <summary>False when the app can't read this setting's state on this PC.</summary>
+        public bool IsVerifiable => CurrentValue is not ("Unknown" or "Check Failed" or "Error" or "Error reading");
+
+        /// <summary>Applied / Not applied / Can't verify.</summary>
+        public string StatusText => !IsVerifiable ? "Can't verify" : IsApplied ? "Applied" : "Not applied";
+
+        /// <summary>
+        /// What "Apply Selected" will do with this row: "Will apply", "Will revert" (toggle
+        /// switched off on an applied setting), or "" when the toggle matches the PC.
+        /// </summary>
+        public string PendingState =>
+            IsEnabled && !IsApplied ? (Category == SettingCategory.Bloatware ? "Will remove" : "Will apply")
+            : !IsEnabled && IsApplied && Category != SettingCategory.Bloatware ? "Will revert"
+            : string.Empty;
+
+        public bool HasPendingChange => PendingState.Length > 0;
+
+        /// <summary>Severity label: CAT I/II/III for DISA STIG rows, Low/Medium/High risk otherwise.</summary>
+        public string RiskDisplay => IsStig
+            ? Risk switch { RiskLevel.High => "CAT I", RiskLevel.Medium => "CAT II", _ => "CAT III" }
+            : Risk + " risk";
+
+        /// <summary>Friendly category name for badges.</summary>
+        public string CategoryDisplay => CategoryNames.Display(Category);
+
+        public bool HasRegistryTarget => Type == SettingType.Registry && !string.IsNullOrEmpty(RegistryPath);
+
+        /// <summary>What this setting changes, in one line, for any setting type.</summary>
+        public string ChangeSummary => Type switch
+        {
+            SettingType.Registry => $"{RegistryPath} → {RegistryKey} = {FormatValue(RecommendedValue)}",
+            _ when !string.IsNullOrEmpty(ASRGuid) => $"Microsoft Defender ASR rule {ASRGuid} → Block",
+            SettingType.AppRemoval => string.IsNullOrEmpty(AppxName) ? "Runs the program's uninstaller" : $"Removes Store app {AppxName} (all users)",
+            _ => ApplyCommand
+        };
+
+        public string RecommendedDisplay => Type == SettingType.Registry
+            ? FormatValue(RecommendedValue)
+            : !string.IsNullOrEmpty(ASRGuid) ? "Block"
+            : Type == SettingType.AppRemoval ? "Removed"
+            : "On";
+
+        public string CurrentValueDisplay => string.IsNullOrEmpty(CurrentValue) ? "Not set"
+            : CurrentValue == "-1" && Type == SettingType.Registry ? "0xFFFFFFFF"
+            : CurrentValue;
+
+        public bool HasReferences => ReferenceUrls is { Length: > 0 };
+
+        private static string FormatValue(object? v) => v switch
+        {
+            null => "(removed)",
+            uint u when u == 0xFFFFFFFF => "0xFFFFFFFF",
+            string[] arr => string.Join(", ", arr),
+            _ => v.ToString() ?? ""
+        };
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -45,7 +45,7 @@
         </Grid.ColumnDefinitions>
 
         <!-- Left Sidebar -->
-        <Border Grid.Column="0" Background="#0D1117">
+        <Border Grid.Column="0" Background="{DynamicResource BackgroundDarkBrush}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -74,12 +74,12 @@
                                     Style="{StaticResource NavButtonStyle}"
                                     Padding="8" HorizontalAlignment="Right"
                                     ToolTip="Collapse / expand sidebar">
-                                <TextBlock Text="☰" FontSize="16" Foreground="#8B949E"/>
+                                <TextBlock Text="☰" FontSize="16" Foreground="{DynamicResource TextSecondaryBrush}"/>
                             </Button>
                         </Grid>
                         <Border Background="#1A3D5A" CornerRadius="4" Padding="8,4" HorizontalAlignment="Left" Margin="4,8,0,0"
                                 Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="{Binding VersionInfo}" FontSize="10" Foreground="#58A6FF"/>
+                            <TextBlock Text="{Binding VersionInfo}" FontSize="10" Foreground="{DynamicResource InfoBrush}"/>
                         </Border>
                     </StackPanel>
                 </Border>
@@ -139,12 +139,12 @@
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Text="{Binding Icon}" FontSize="14"/>
                                             <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="12"
-                                                       TextTrimming="CharacterEllipsis" Foreground="#8B949E"
+                                                       TextTrimming="CharacterEllipsis" Foreground="{DynamicResource TextSecondaryBrush}"
                                                        Visibility="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
                                             <Border Grid.Column="2" CornerRadius="10" Padding="6,2"
-                                                    Background="#21262D"
+                                                    Background="{DynamicResource BackgroundLightBrush}"
                                                     Visibility="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}">
-                                                <TextBlock Text="{Binding SettingsCount}" FontSize="10" Foreground="#8B949E"/>
+                                                <TextBlock Text="{Binding SettingsCount}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                             </Border>
                                         </Grid>
                                     </Button>
@@ -155,7 +155,7 @@
                                 <GroupStyle>
                                     <GroupStyle.HeaderTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding Name}" Foreground="#484F58"
+                                            <TextBlock Text="{Binding Name}" Foreground="{DynamicResource BorderLightBrush}"
                                                        FontSize="10" FontWeight="Bold"
                                                        Margin="12,12,0,6"
                                                        Visibility="{Binding DataContext.IsSidebarExpanded, RelativeSource={RelativeSource AncestorType=Window}, Converter={StaticResource BoolToVis}}"/>
@@ -169,7 +169,7 @@
 
                 <!-- Bottom -->
                 <StackPanel Grid.Row="3" Margin="8,8,8,16">
-                    <Separator Background="#21262D" Margin="4,0,4,8"/>
+                    <Separator Background="{DynamicResource BackgroundLightBrush}" Margin="4,0,4,8"/>
                     
                     <!-- Configuration Import/Export -->
                     <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ImportConfigurationCommand}" Padding="12,8" ToolTip="Import Config">
@@ -195,7 +195,7 @@
                         </Grid>
                     </Button>
 
-                    <Separator Background="#21262D" Margin="4,8,4,8"/>
+                    <Separator Background="{DynamicResource BackgroundLightBrush}" Margin="4,8,4,8"/>
                     <Button Style="{StaticResource NavButtonStyle}" Command="{Binding ShowAboutCommand}" Padding="12,8" ToolTip="About">
                         <Grid HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
@@ -212,7 +212,7 @@
         </Border>
 
         <!-- Main Content Area -->
-        <Grid Grid.Column="1" Background="#161B22">
+        <Grid Grid.Column="1" Background="{DynamicResource BackgroundMediumBrush}">
             
             <!-- Dashboard View -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -230,9 +230,9 @@
                 <StackPanel Margin="24,20">
                     <!-- Header -->
                     <TextBlock Text="Security Dashboard" FontSize="26" FontWeight="Bold" 
-                               Foreground="#F0F6FC" Margin="0,0,0,4"/>
+                               Foreground="{DynamicResource TextHeadingBrush}" Margin="0,0,0,4"/>
                     <TextBlock Text="Monitor and improve your Windows security posture" 
-                               FontSize="13" Foreground="#8B949E" Margin="0,0,0,20"/>
+                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,20"/>
 
                     <!-- Security Score Card -->
                     <Border CornerRadius="12" Margin="0,0,0,16">
@@ -251,7 +251,7 @@
 
                             <!-- Score Circle -->
                             <Grid Width="120" Height="120">
-                                <Ellipse Stroke="#21262D" StrokeThickness="8" Fill="Transparent"/>
+                                <Ellipse Stroke="{DynamicResource BackgroundLightBrush}" StrokeThickness="8" Fill="Transparent"/>
                                 <Ellipse Stroke="{Binding SecurityScore, Converter={StaticResource ScoreToColorConverter}}" StrokeThickness="8" Fill="Transparent"
                                          StrokeDashArray="2.5 0.5" StrokeDashCap="Round"
                                          RenderTransformOrigin="0.5,0.5">
@@ -261,23 +261,23 @@
                                 </Ellipse>
                                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding SecurityScore}" FontSize="36" FontWeight="Bold" 
-                                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="/ 100" FontSize="14" Foreground="#8B949E" HorizontalAlignment="Center" Margin="0,-4,0,0"/>
+                                               Foreground="{DynamicResource TextHeadingBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="/ 100" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,-4,0,0"/>
                                 </StackPanel>
                             </Grid>
 
                             <!-- Score Details -->
                             <StackPanel Grid.Column="1" Margin="24,0" VerticalAlignment="Center">
-                                <TextBlock Text="Security Score" FontSize="18" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Security Score" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
                                 <TextBlock Text="{Binding SecurityLevel}" FontSize="14" 
                                            Foreground="{Binding SecurityScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,12"/>
-                                <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="12" LineHeight="18">
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" LineHeight="18">
                                     <Run Text="{Binding ScoreAppliedCount, Mode=OneWay}"/>
                                     <Run Text=" of "/>
                                     <Run Text="{Binding ScoreTotalCount, Mode=OneWay}"/>
                                     <Run Text=" Recommended protections are on. The score measures the Recommended profile only."/>
                                 </TextBlock>
-                                <TextBlock TextWrapping="Wrap" Foreground="#6E7681" FontSize="11" Margin="0,6,0,0"
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,6,0,0"
                                            ToolTip="Strict lockdowns from the Maximum profile. They add friction and can break apps, so they don't count toward your score.">
                                     <Run Text="Optional extra lockdown (Maximum only): "/>
                                     <Run Text="{Binding ExtraLockdownAppliedCount, Mode=OneWay}"/>
@@ -329,7 +329,7 @@
 
                             <!-- STIG Score Circle -->
                             <Grid Width="80" Height="80">
-                                <Ellipse Stroke="#21262D" StrokeThickness="6" Fill="Transparent"/>
+                                <Ellipse Stroke="{DynamicResource BackgroundLightBrush}" StrokeThickness="6" Fill="Transparent"/>
                                 <Ellipse Stroke="{Binding STIGComplianceScore, Converter={StaticResource ScoreToColorConverter}}" StrokeThickness="6" Fill="Transparent"
                                          StrokeDashArray="2.5 0.5" StrokeDashCap="Round"
                                          RenderTransformOrigin="0.5,0.5">
@@ -339,8 +339,8 @@
                                 </Ellipse>
                                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding STIGComplianceScore}" FontSize="24" FontWeight="Bold" 
-                                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="%" FontSize="11" Foreground="#8B949E" HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                                               Foreground="{DynamicResource TextHeadingBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="%" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,-2,0,0"/>
                                 </StackPanel>
                             </Grid>
 
@@ -348,11 +348,11 @@
                             <StackPanel Grid.Column="1" Margin="20,0" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🏛️" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="DISA STIG Compliance" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="DISA STIG Compliance" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
                                 </StackPanel>
                                 <TextBlock Text="{Binding STIGComplianceLevel}" FontSize="13" 
                                            Foreground="{Binding STIGComplianceScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,8"/>
-                                <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="11" LineHeight="16">
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" LineHeight="16">
                                     <Run Text="{Binding AppliedSTIGCount, Mode=OneWay}"/>
                                     <Run Text=" of "/>
                                     <Run Text="{Binding STIGSettingsCount, Mode=OneWay}"/>
@@ -372,9 +372,9 @@
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="11" FontWeight="SemiBold"
-                                                           Foreground="#58A6FF" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
-                                                <TextBlock Grid.Column="1" Text="{Binding StigVersion}" FontSize="10" Foreground="#8B949E" Margin="8,0,8,0" VerticalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" Text="{Binding Progress}" FontSize="10" Foreground="#C9D1D9" VerticalAlignment="Center"/>
+                                                           Foreground="{DynamicResource InfoBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding StigVersion}" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}" Margin="8,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Progress}" FontSize="10" Foreground="{DynamicResource TextBodyBrush}" VerticalAlignment="Center"/>
                                             </Grid>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -403,7 +403,7 @@
 
                             <!-- ACSC Score Circle -->
                             <Grid Width="80" Height="80">
-                                <Ellipse Stroke="#21262D" StrokeThickness="6" Fill="Transparent"/>
+                                <Ellipse Stroke="{DynamicResource BackgroundLightBrush}" StrokeThickness="6" Fill="Transparent"/>
                                 <Ellipse Stroke="{Binding ACSCComplianceScore, Converter={StaticResource ScoreToColorConverter}}" StrokeThickness="6" Fill="Transparent"
                                          StrokeDashArray="2.5 0.5" StrokeDashCap="Round"
                                          RenderTransformOrigin="0.5,0.5">
@@ -413,8 +413,8 @@
                                 </Ellipse>
                                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding ACSCComplianceScore}" FontSize="24" FontWeight="Bold"
-                                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="%" FontSize="11" Foreground="#8B949E" HorizontalAlignment="Center" Margin="0,-2,0,0"/>
+                                               Foreground="{DynamicResource TextHeadingBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="%" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,-2,0,0"/>
                                 </StackPanel>
                             </Grid>
 
@@ -422,11 +422,11 @@
                             <StackPanel Grid.Column="1" Margin="20,0" VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="🇦🇺" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="ACSC Essential Eight" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="ACSC Essential Eight" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
                                 </StackPanel>
                                 <TextBlock Text="{Binding ACSCComplianceLevel}" FontSize="13"
                                            Foreground="{Binding ACSCComplianceScore, Converter={StaticResource ScoreToColorConverter}}" Margin="0,4,0,8"/>
-                                <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="11" LineHeight="16">
+                                <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11" LineHeight="16">
                                     <Run Text="{Binding AppliedACSCCount, Mode=OneWay}"/>
                                     <Run Text=" of "/>
                                     <Run Text="{Binding ACSCSettingsCount, Mode=OneWay}"/>
@@ -438,7 +438,7 @@
                             <Border Grid.Column="2" CornerRadius="8" Background="#1A00CC66" Padding="12,8" VerticalAlignment="Center">
                                 <StackPanel>
                                     <TextBlock Text="Essential Eight" FontSize="11" FontWeight="SemiBold" Foreground="#00CC66"/>
-                                    <TextBlock Text="July 2024" FontSize="10" Foreground="#8B949E"/>
+                                    <TextBlock Text="July 2024" FontSize="10" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -446,7 +446,7 @@
 
                     <!-- Quick Profiles -->
                     <TextBlock Text="Quick Hardening Profiles" FontSize="16" FontWeight="SemiBold"
-                               Foreground="#F0F6FC" Margin="0,8,0,12"/>
+                               Foreground="{DynamicResource TextHeadingBrush}" Margin="0,8,0,12"/>
                     <Grid Margin="0,0,0,20">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -457,14 +457,14 @@
                         <!-- Basic Profile -->
                         <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,8,0" Padding="16">
                             <StackPanel>
-                                <Border Width="48" Height="48" CornerRadius="12" Background="#1A238636" Margin="0,0,0,12">
+                                <Border Width="48" Height="48" CornerRadius="12" Background="{DynamicResource SuccessBadgeBrush}" Margin="0,0,0,12">
                                     <TextBlock Text="🛡️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Basic" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
-                                <TextBlock Text="Highest-ROI core, zero friction" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="Basic" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
+                                <TextBlock Text="Highest-ROI core, zero friction" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,8" TextWrapping="Wrap"/>
                                 <StackPanel Margin="0,0,0,10">
-                                    <TextBlock Text="{Binding BasicProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="#238636"/>
-                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding BasicAppliedCount, Mode=OneWay}" Foreground="#3FB950" FontWeight="SemiBold"/><Run Text=" of " Foreground="#8B949E"/><Run Text="{Binding BasicProfileCount, Mode=OneWay}" Foreground="#8B949E"/><Run Text=" already applied  ·  " Foreground="#8B949E"/><Run Text="{Binding BasicRemainingCount, Mode=OneWay}" Foreground="#D29922" FontWeight="SemiBold"/><Run Text=" to go" Foreground="#8B949E"/></TextBlock>
+                                    <TextBlock Text="{Binding BasicProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="{DynamicResource SuccessBrush}"/>
+                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding BasicAppliedCount, Mode=OneWay}" Foreground="{DynamicResource SuccessTextBrush}" FontWeight="SemiBold"/><Run Text=" of " Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text="{Binding BasicProfileCount, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text=" already applied  ·  " Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text="{Binding BasicRemainingCount, Mode=OneWay}" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/><Run Text=" to go" Foreground="{DynamicResource TextSecondaryBrush}"/></TextBlock>
                                 </StackPanel>
                                 <Button Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
                                         Command="{Binding ApplyBasicProfileCommand}"
@@ -477,21 +477,21 @@
 
                         <!-- Recommended Profile -->
                         <Border Grid.Column="1" Style="{StaticResource CardStyle}" Margin="4,0" Padding="16"
-                                BorderBrush="#238636" BorderThickness="1">
+                                BorderBrush="{DynamicResource SuccessBrush}" BorderThickness="1">
                             <StackPanel>
-                                <Border Width="48" Height="48" CornerRadius="12" Background="#1A58A6FF" Margin="0,0,0,12">
+                                <Border Width="48" Height="48" CornerRadius="12" Background="{DynamicResource InfoBadgeBrush}" Margin="0,0,0,12">
                                     <TextBlock Text="⚡" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Recommended" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
-                                    <Border Background="#238636" CornerRadius="4" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Recommended" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
+                                    <Border Background="{DynamicResource SuccessBrush}" CornerRadius="4" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                         <TextBlock Text="BEST" FontSize="9" Foreground="White" FontWeight="Bold"/>
                                     </Border>
                                 </StackPanel>
-                                <TextBlock Text="Stops real malware &amp; exploits — no crippling" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="Stops real malware &amp; exploits — no crippling" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,8" TextWrapping="Wrap"/>
                                 <StackPanel Margin="0,0,0,10">
-                                    <TextBlock Text="{Binding RecommendedProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="#58A6FF"/>
-                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding RecommendedAppliedCount, Mode=OneWay}" Foreground="#3FB950" FontWeight="SemiBold"/><Run Text=" of " Foreground="#8B949E"/><Run Text="{Binding RecommendedProfileCount, Mode=OneWay}" Foreground="#8B949E"/><Run Text=" already applied  ·  " Foreground="#8B949E"/><Run Text="{Binding RecommendedRemainingCount, Mode=OneWay}" Foreground="#D29922" FontWeight="SemiBold"/><Run Text=" to go" Foreground="#8B949E"/></TextBlock>
+                                    <TextBlock Text="{Binding RecommendedProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="{DynamicResource InfoBrush}"/>
+                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding RecommendedAppliedCount, Mode=OneWay}" Foreground="{DynamicResource SuccessTextBrush}" FontWeight="SemiBold"/><Run Text=" of " Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text="{Binding RecommendedProfileCount, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text=" already applied  ·  " Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text="{Binding RecommendedRemainingCount, Mode=OneWay}" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/><Run Text=" to go" Foreground="{DynamicResource TextSecondaryBrush}"/></TextBlock>
                                 </StackPanel>
                                 <Button Style="{StaticResource SuccessButtonStyle}" Content="Apply"
                                         Command="{Binding ApplyRecommendedCommand}"
@@ -505,14 +505,14 @@
                         <!-- Maximum Profile -->
                         <Border Grid.Column="2" Style="{StaticResource CardStyle}" Margin="4,0" Padding="16">
                             <StackPanel>
-                                <Border Width="48" Height="48" CornerRadius="12" Background="#1AD29922" Margin="0,0,0,12">
+                                <Border Width="48" Height="48" CornerRadius="12" Background="{DynamicResource WarningBadgeBrush}" Margin="0,0,0,12">
                                     <TextBlock Text="🔒" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock Text="Maximum" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
-                                <TextBlock Text="Everything, incl. STIG lockdowns (friction)" FontSize="11" Foreground="#8B949E" Margin="0,2,0,8" TextWrapping="Wrap"/>
+                                <TextBlock Text="Maximum" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
+                                <TextBlock Text="Everything, incl. STIG lockdowns (friction)" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,8" TextWrapping="Wrap"/>
                                 <StackPanel Margin="0,0,0,10">
-                                    <TextBlock Text="{Binding MaximumProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="#D29922"/>
-                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding MaximumAppliedCount, Mode=OneWay}" Foreground="#3FB950" FontWeight="SemiBold"/><Run Text=" of " Foreground="#8B949E"/><Run Text="{Binding MaximumProfileCount, Mode=OneWay}" Foreground="#8B949E"/><Run Text=" already applied  ·  " Foreground="#8B949E"/><Run Text="{Binding MaximumRemainingCount, Mode=OneWay}" Foreground="#D29922" FontWeight="SemiBold"/><Run Text=" to go" Foreground="#8B949E"/></TextBlock>
+                                    <TextBlock Text="{Binding MaximumProfileCount, StringFormat='{}{0} settings'}" FontSize="11" Foreground="{DynamicResource WarningBrush}"/>
+                                    <TextBlock FontSize="11" Margin="0,3,0,0" TextWrapping="Wrap"><Run Text="{Binding MaximumAppliedCount, Mode=OneWay}" Foreground="{DynamicResource SuccessTextBrush}" FontWeight="SemiBold"/><Run Text=" of " Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text="{Binding MaximumProfileCount, Mode=OneWay}" Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text=" already applied  ·  " Foreground="{DynamicResource TextSecondaryBrush}"/><Run Text="{Binding MaximumRemainingCount, Mode=OneWay}" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/><Run Text=" to go" Foreground="{DynamicResource TextSecondaryBrush}"/></TextBlock>
                                 </StackPanel>
                                 <Button Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
                                         Command="{Binding ApplyMaximumProfileCommand}"
@@ -527,7 +527,7 @@
 
                     <!-- Cleanup & Privacy quick actions -->
                     <TextBlock Text="Cleanup &amp; Privacy" FontSize="16" FontWeight="SemiBold"
-                               Foreground="#F0F6FC" Margin="0,20,0,12"/>
+                               Foreground="{DynamicResource TextHeadingBrush}" Margin="0,20,0,12"/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -546,8 +546,8 @@
                                     <TextBlock Text="👁️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Tighten Up Privacy" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
-                                    <TextBlock Text="Turn off telemetry, ad ID, activity history &amp; suggested content" FontSize="11" Foreground="#8B949E" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Tighten Up Privacy" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
+                                    <TextBlock Text="Turn off telemetry, ad ID, activity history &amp; suggested content" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
                                 <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Content="Apply"
                                         Command="{Binding TightenPrivacyCommand}"
@@ -567,8 +567,8 @@
                                     <TextBlock Text="🗑️" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="Clean Up Bloat" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC"/>
-                                    <TextBlock Text="Remove Store junk, games &amp; OEM/AV trials (McAfee, Norton…)" FontSize="11" Foreground="#8B949E" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    <TextBlock Text="Clean Up Bloat" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
+                                    <TextBlock Text="Remove Store junk, games &amp; OEM/AV trials (McAfee, Norton…)" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
                                 <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" Content="Review"
                                         Command="{Binding CleanUpBloatCommand}"
@@ -579,7 +579,7 @@
 
                     <!-- Category Overview -->
                     <TextBlock Text="Category Overview" FontSize="16" FontWeight="SemiBold"
-                               Foreground="#F0F6FC" Margin="0,20,0,12"/>
+                               Foreground="{DynamicResource TextHeadingBrush}" Margin="0,20,0,12"/>
                     <ItemsControl ItemsSource="{Binding Categories}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -597,12 +597,12 @@
                                         <TextBlock Text="{Binding Icon}" FontSize="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                         <StackPanel Grid.Column="1">
                                             <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" 
-                                                       Foreground="#F0F6FC" TextTrimming="CharacterEllipsis"/>
+                                                       Foreground="{DynamicResource TextHeadingBrush}" TextTrimming="CharacterEllipsis"/>
                                             <Grid Margin="0,6,0,0">
                                                 <ProgressBar Value="{Binding EnabledCount}" Maximum="{Binding SettingsCount}"
-                                                             Height="4" Background="#21262D" Foreground="#238636"/>
+                                                             Height="4" Background="{DynamicResource BackgroundLightBrush}" Foreground="{DynamicResource SuccessBrush}"/>
                                             </Grid>
-                                            <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#8B949E">
+                                            <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
                                                 <Run Text="{Binding EnabledCount, Mode=OneWay}"/>
                                                 <Run Text=" / "/>
                                                 <Run Text="{Binding SettingsCount, Mode=OneWay}"/>
@@ -623,9 +623,9 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="📄 Export Security Report" FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="📄 Export Security Report" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
                                 <TextBlock Text="Generate a detailed HTML report of your current security configuration" 
-                                           FontSize="12" Foreground="#8B949E" Margin="0,4,0,0"/>
+                                           FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="1" Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding ExportReportCommand}"
@@ -661,7 +661,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Header -->
-                <Border Grid.Row="0" Background="#0D1117" Padding="20,14">
+                <Border Grid.Row="0" Background="{DynamicResource BackgroundDarkBrush}" Padding="20,14">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -669,7 +669,7 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel>
-                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="#F0F6FC" TextTrimming="CharacterEllipsis">
+                            <TextBlock FontSize="22" FontWeight="Bold" Foreground="{DynamicResource TextHeadingBrush}" TextTrimming="CharacterEllipsis">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{Binding SelectedCategory.Name}"/>
@@ -693,7 +693,7 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
-                            <TextBlock Foreground="#8B949E" FontSize="12" Margin="0,2,0,0">
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,2,0,0">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Text" Value="{Binding SelectedCategory.Description}"/>
@@ -720,6 +720,14 @@
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Style="{StaticResource SecondaryButtonStyle}" Padding="12,8" FontSize="12" Margin="0,0,10,0"
+                                    Command="{Binding ShowPendingChangesCommand}"
+                                    ToolTip="Show only the settings that Apply Selected will change"
+                                    Visibility="{Binding HasPendingChanges, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Foreground="{DynamicResource InfoBrush}">
+                                    <Run Text="● "/><Run Text="{Binding PendingChangesCount, Mode=OneWay}"/><Run Text=" pending changes"/>
+                                </TextBlock>
+                            </Button>
                             <Button Style="{StaticResource SecondaryButtonStyle}" Content="Select All" Padding="14,8" FontSize="12"
                                     Command="{Binding SelectAllCommand}" Margin="0,0,6,0"/>
                             <Button Style="{StaticResource SecondaryButtonStyle}" Content="Deselect" Padding="14,8" FontSize="12"
@@ -736,7 +744,7 @@
                 </Border>
 
                 <!-- Filters Bar -->
-                <Border Grid.Row="1" Background="#161B22" Padding="20,10" BorderBrush="#21262D" BorderThickness="0,0,0,1">
+                <Border Grid.Row="1" Background="{DynamicResource BackgroundMediumBrush}" Padding="20,10" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="0,0,0,1">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -744,7 +752,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Search (flexible width, shrinks on small screens) -->
-                        <Border Grid.Column="0" Background="#0D1117" BorderBrush="#30363D" BorderThickness="1"
+                        <Border Grid.Column="0" Background="{DynamicResource BackgroundDarkBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                 CornerRadius="6" Padding="10,6" MinWidth="120" MaxWidth="380"
                                 HorizontalAlignment="Left" Margin="0,0,12,0">
                             <Grid>
@@ -754,17 +762,29 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="🔍" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0" Opacity="0.6"/>
                                 <TextBox Grid.Column="1"
+                                         AutomationProperties.Name="Search settings"
+                                         ToolTip="Search by name, description, registry value, STIG ID (e.g. WN11-SO-000195), Vuln ID or CCI"
                                          Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                                          Background="Transparent" BorderThickness="0"
-                                         Foreground="#F0F6FC" CaretBrush="#F0F6FC"
+                                         Foreground="{DynamicResource TextHeadingBrush}" CaretBrush="{DynamicResource TextHeadingBrush}"
                                          FontSize="13" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 
                         <!-- Risk / STIG Filter -->
                         <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="Filter:" Foreground="#8B949E" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
-                            <ComboBox SelectedIndex="{Binding SelectedRiskFilter}" Width="170" FontSize="12">
+                            <TextBlock Text="Status:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                            <ComboBox SelectedIndex="{Binding SelectedStatusFilter}" Width="140" FontSize="12" Margin="0,0,12,0"
+                                      AutomationProperties.Name="Status filter">
+                                <ComboBoxItem Content="Any status"/>
+                                <ComboBoxItem Content="Not applied"/>
+                                <ComboBoxItem Content="Applied"/>
+                                <ComboBoxItem Content="Can't verify"/>
+                                <ComboBoxItem Content="Pending changes"/>
+                            </ComboBox>
+                            <TextBlock Text="Risk / framework:" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" FontSize="12"/>
+                            <ComboBox SelectedIndex="{Binding SelectedRiskFilter}" Width="170" FontSize="12"
+                                      AutomationProperties.Name="Risk or framework filter">
                                 <ComboBoxItem Content="All"/>
                                 <ComboBoxItem Content="Low Risk"/>
                                 <ComboBoxItem Content="Medium Risk"/>
@@ -806,8 +826,8 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#0D1117" CornerRadius="8" Margin="0,0,0,6" Padding="14"
-                                        BorderBrush="#21262D" BorderThickness="1">
+                                <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" Margin="0,0,0,6" Padding="14"
+                                        BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
@@ -818,42 +838,46 @@
                                         <!-- Toggle -->
                                         <CheckBox Style="{StaticResource ToggleSwitchStyle}"
                                                   IsChecked="{Binding IsEnabled}"
+                                                  AutomationProperties.Name="{Binding Name}"
+                                                  AutomationProperties.HelpText="{Binding StatusText}"
+                                                  ToolTip="On = keep/apply this setting. Off on an applied setting = revert it on Apply."
                                                   VerticalAlignment="Top" Margin="0,2,14,0"/>
 
                                         <!-- Details -->
                                         <StackPanel Grid.Column="1">
-                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"
+                                                       TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                            <WrapPanel Orientation="Horizontal" Margin="0,0,0,4">
                                                 
                                                 <!-- Risk Badge -->
-                                                <Border CornerRadius="4" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                <Border CornerRadius="4" Padding="6,2" Margin="0,0,0,2" VerticalAlignment="Center">
                                                     <Border.Style>
                                                         <Style TargetType="Border">
                                                             <Style.Triggers>
                                                                 <DataTrigger Binding="{Binding Risk}" Value="Low">
-                                                                    <Setter Property="Background" Value="#1A238636"/>
+                                                                    <Setter Property="Background" Value="{DynamicResource SuccessBadgeBrush}"/>
                                                                 </DataTrigger>
                                                                 <DataTrigger Binding="{Binding Risk}" Value="Medium">
-                                                                    <Setter Property="Background" Value="#1AD29922"/>
+                                                                    <Setter Property="Background" Value="{DynamicResource WarningBadgeBrush}"/>
                                                                 </DataTrigger>
                                                                 <DataTrigger Binding="{Binding Risk}" Value="High">
-                                                                    <Setter Property="Background" Value="#1ADA3633"/>
+                                                                    <Setter Property="Background" Value="{DynamicResource DangerBadgeBrush}"/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </Border.Style>
-                                                    <TextBlock Text="{Binding Risk}" FontSize="10" FontWeight="SemiBold">
+                                                    <TextBlock Text="{Binding RiskDisplay}" FontSize="10" FontWeight="SemiBold">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Style.Triggers>
                                                                     <DataTrigger Binding="{Binding Risk}" Value="Low">
-                                                                        <Setter Property="Foreground" Value="#238636"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding Risk}" Value="Medium">
-                                                                        <Setter Property="Foreground" Value="#D29922"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}"/>
                                                                     </DataTrigger>
                                                                     <DataTrigger Binding="{Binding Risk}" Value="High">
-                                                                        <Setter Property="Foreground" Value="#DA3633"/>
+                                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
                                                                     </DataTrigger>
                                                                 </Style.Triggers>
                                                             </Style>
@@ -861,67 +885,141 @@
                                                     </TextBlock>
                                                 </Border>
 
-                                                <!-- Applied Badge -->
-                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,0"
-                                                        Background="#1A238636"
-                                                        Visibility="{Binding IsApplied, Converter={StaticResource BoolToVis}}">
-                                                    <TextBlock Text="✓ Applied" FontSize="10" Foreground="#238636"/>
+                                                <!-- Status: Applied / Not applied / Can't verify -->
+                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,2">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{DynamicResource BackgroundLightBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding StatusText}" Value="Applied">
+                                                                    <Setter Property="Background" Value="{DynamicResource SuccessBadgeBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="10">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding StatusText}" Value="Applied">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessTextBrush}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </Border>
+
+                                                <!-- Pending change: what Apply Selected will do with this row -->
+                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,2"
+                                                        Visibility="{Binding HasPendingChange, Converter={StaticResource BoolToVis}}">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{DynamicResource InfoBadgeBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding PendingState}" Value="Will revert">
+                                                                    <Setter Property="Background" Value="{DynamicResource WarningBadgeBrush}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding PendingState}" Value="Will remove">
+                                                                    <Setter Property="Background" Value="{DynamicResource DangerBadgeBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock FontSize="10" FontWeight="SemiBold">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="{DynamicResource InfoBrush}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding PendingState}" Value="Will revert">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}"/>
+                                                                    </DataTrigger>
+                                                                    <DataTrigger Binding="{Binding PendingState}" Value="Will remove">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource DangerLightBrush}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                        <Run Text="● "/><Run Text="{Binding PendingState, Mode=OneWay}"/>
+                                                    </TextBlock>
                                                 </Border>
 
                                                 <!-- Category -->
-                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,0" Background="#21262D">
-                                                    <TextBlock Text="{Binding Category}" FontSize="9" Foreground="#8B949E"/>
+                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,2" Background="{DynamicResource BackgroundLightBrush}">
+                                                    <TextBlock Text="{Binding CategoryDisplay}" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
                                                 </Border>
-                                            </StackPanel>
 
-                                            <TextBlock Text="{Binding Description}" Foreground="#8B949E" FontSize="12" TextWrapping="Wrap"/>
+                                                <!-- Needs restart -->
+                                                <Border CornerRadius="4" Padding="6,2" Margin="6,0,0,2" Background="{DynamicResource BackgroundLightBrush}"
+                                                        Visibility="{Binding RequiresReboot, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="↻ Needs restart" FontSize="9" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                </Border>
+                                            </WrapPanel>
+
+                                            <TextBlock Text="{Binding Description}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" TextWrapping="Wrap"/>
 
                                             <!-- Warning -->
                                             <Border Visibility="{Binding ImpactWarning, Converter={StaticResource NullToVisibilityConverter}}"
-                                                    Background="#1AD29922" CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
+                                                    Background="{DynamicResource WarningBadgeBrush}" CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
                                                 <StackPanel Orientation="Horizontal">
                                                     <TextBlock Text="⚠️" FontSize="11" Margin="0,0,6,0"/>
-                                                    <TextBlock Text="{Binding ImpactWarning}" Foreground="#D29922" FontSize="11"/>
+                                                    <TextBlock Text="{Binding ImpactWarning}" Foreground="{DynamicResource WarningBrush}" FontSize="11"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <!-- Detailed Info (if available) -->
-                                            <TextBlock Text="{Binding DetailedInfo}"
-                                                       Visibility="{Binding DetailedInfo, Converter={StaticResource NullToVisibilityConverter}}"
-                                                       Foreground="#6E7681" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
-                                                       FontStyle="Italic"/>
-
-                                            <!-- Reference URLs (if available, display-only) -->
-                                            <ItemsControl ItemsSource="{Binding ReferenceUrls}"
-                                                          Visibility="{Binding ReferenceUrls, Converter={StaticResource NullToVisibilityConverter}}"
-                                                          Margin="0,4,0,0">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Foreground="#6E7681" FontSize="10" Margin="0,1,0,1">
-                                                            <Run Text="📎 "/><Run Text="{Binding Mode=OneWay}"/>
-                                                        </TextBlock>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-
-                                            <!-- Registry Path (collapsible detail) -->
-                                            <Border Background="#161B22" CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
-                                                <TextBlock FontSize="10" Foreground="#6E7681" FontFamily="Consolas" TextWrapping="Wrap">
-                                                    <Run Text="{Binding RegistryPath, Mode=OneWay}"/>
-                                                    <Run Text=" → "/>
-                                                    <Run Text="{Binding RegistryKey, Mode=OneWay}"/>
-                                                </TextBlock>
+                                            <!-- What it changes (any setting type), with copy -->
+                                            <Border Background="{DynamicResource BackgroundMediumBrush}" CornerRadius="4" Padding="8,5" Margin="0,6,0,0">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding ChangeSummary}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                                                               FontFamily="Consolas" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                    <Button Grid.Column="1" Content="Copy" FontSize="10" Padding="6,1" Margin="8,0,0,0"
+                                                            Background="Transparent" Foreground="{DynamicResource InfoBrush}" BorderThickness="0" Cursor="Hand"
+                                                            ToolTip="Copy to clipboard" AutomationProperties.Name="Copy change details"
+                                                            Command="{Binding DataContext.CopyTextCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding ChangeSummary}"/>
+                                                </Grid>
                                             </Border>
+
+                                            <!-- Details (collapsed by default so the list stays scannable) -->
+                                            <Expander Header="Details" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,4,0,0"
+                                                      Visibility="{Binding DetailedInfo, Converter={StaticResource NullToVisibilityConverter}}">
+                                                <StackPanel Margin="0,4,0,0">
+                                                    <TextBlock Text="{Binding DetailedInfo}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"
+                                                               TextWrapping="Wrap" FontStyle="Italic"/>
+                                                    <ItemsControl ItemsSource="{Binding ReferenceUrls}" Margin="0,4,0,0"
+                                                                  Visibility="{Binding HasReferences, Converter={StaticResource BoolToVis}}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Button Background="Transparent" BorderThickness="0" Padding="0" Margin="0,1"
+                                                                        Cursor="Hand" HorizontalAlignment="Left" ToolTip="Open in your browser"
+                                                                        Command="{Binding DataContext.OpenReferenceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                        CommandParameter="{Binding}">
+                                                                    <TextBlock Foreground="{DynamicResource InfoBrush}" FontSize="10" TextDecorations="Underline" TextWrapping="Wrap">
+                                                                        <Run Text="📎 "/><Run Text="{Binding Mode=OneWay}"/>
+                                                                    </TextBlock>
+                                                                </Button>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Expander>
                                         </StackPanel>
 
                                         <!-- Current Value -->
                                         <StackPanel Grid.Column="2" MinWidth="120" Margin="14,0,0,0">
-                                            <TextBlock Text="Current" FontSize="10" Foreground="#6E7681"/>
-                                            <TextBlock Text="{Binding CurrentValue, FallbackValue='Not Set'}" 
-                                                       FontSize="12" Foreground="#8B949E" FontFamily="Consolas"/>
-                                            <TextBlock Text="Recommended" FontSize="10" Foreground="#6E7681" Margin="0,8,0,0"/>
-                                            <TextBlock Text="{Binding RecommendedValue}" 
-                                                       FontSize="12" Foreground="#58A6FF" FontFamily="Consolas"/>
+                                            <TextBlock Text="Current" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            <TextBlock Text="{Binding CurrentValueDisplay}" MaxWidth="180" TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding CurrentValueDisplay}"
+                                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" FontFamily="Consolas"/>
+                                            <TextBlock Text="Recommended" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{Binding RecommendedDisplay}" MaxWidth="180" TextTrimming="CharacterEllipsis"
+                                                       ToolTip="{Binding RecommendedDisplay}"
+                                                       FontSize="12" Foreground="{DynamicResource InfoBrush}" FontFamily="Consolas"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>
@@ -930,7 +1028,7 @@
                 </ListBox>
 
                 <!-- Status Bar -->
-                <Border Grid.Row="3" Background="#0D1117" Padding="20,10">
+                <Border Grid.Row="3" Background="{DynamicResource BackgroundDarkBrush}" Padding="20,10">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -938,14 +1036,14 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="{Binding StatusMessage}" Foreground="#8B949E" FontSize="12" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center"/>
 
                         <ProgressBar Grid.Column="1" Width="150" Height="4" Margin="16,0"
                                      Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"
-                                     Background="#21262D" Foreground="#238636"
+                                     Background="{DynamicResource BackgroundLightBrush}" Foreground="{DynamicResource SuccessBrush}"
                                      Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}"/>
 
-                        <TextBlock Grid.Column="2" Foreground="#8B949E" FontSize="12" VerticalAlignment="Center">
+                        <TextBlock Grid.Column="2" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" VerticalAlignment="Center">
                             <Run Text="{Binding CurrentSettings.Count, Mode=OneWay}"/>
                             <Run Text=" settings"/>
                         </TextBlock>
@@ -967,28 +1065,28 @@
                 </ScrollViewer.Style>
                 
                 <StackPanel Margin="24,20">
-                    <TextBlock Text="Backup &amp; Restore" FontSize="26" FontWeight="Bold" Foreground="#F0F6FC" Margin="0,0,0,4"/>
+                    <TextBlock Text="Backup &amp; Restore" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource TextHeadingBrush}" Margin="0,0,0,4"/>
                     <TextBlock Text="Protect your system with restore points and registry backups" 
-                               FontSize="13" Foreground="#8B949E" Margin="0,0,0,20"/>
+                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,20"/>
 
                     <!-- System Restore Section -->
-                    <TextBlock Text="🔄 Windows System Restore" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,12"/>
+                    <TextBlock Text="🔄 Windows System Restore" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}" Margin="0,0,0,12"/>
                     
                     <!-- Create System Restore Point -->
-                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="16" Margin="0,0,0,8">
+                    <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,8">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Border Width="40" Height="40" CornerRadius="10" Background="#1A238636" Margin="0,0,14,0">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource SuccessBadgeBrush}" Margin="0,0,14,0">
                                 <TextBlock Text="🛡️" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="Create Restore Point" FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Create Restore Point" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
                                 <TextBlock Text="Creates a Windows System Restore point before making changes" 
-                                           FontSize="11" Foreground="#8B949E" Margin="0,2,0,0"/>
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="2" Style="{StaticResource SuccessButtonStyle}" 
                                     Command="{Binding CreateRestorePointCommand}" Padding="14,8">
@@ -998,20 +1096,20 @@
                     </Border>
 
                     <!-- Open System Restore Dialog -->
-                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="16" Margin="0,0,0,16">
+                    <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,16">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Border Width="40" Height="40" CornerRadius="10" Background="#1A58A6FF" Margin="0,0,14,0">
+                            <Border Width="40" Height="40" CornerRadius="10" Background="{DynamicResource InfoBadgeBrush}" Margin="0,0,14,0">
                                 <TextBlock Text="⏪" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="Restore from System Restore Point" FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="Restore from System Restore Point" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}"/>
                                 <TextBlock Text="Opens Windows System Restore to recover your entire system" 
-                                           FontSize="11" Foreground="#8B949E" Margin="0,2,0,0"/>
+                                           FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Button Grid.Column="2" Style="{StaticResource SecondaryButtonStyle}" 
                                     Command="{Binding OpenSystemRestoreCommand}" Padding="14,8">
@@ -1021,18 +1119,18 @@
                     </Border>
 
                     <!-- Registry Backups Section -->
-                    <TextBlock Text="💾 Registry Backups" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,8,0,12"/>
+                    <TextBlock Text="💾 Registry Backups" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}" Margin="0,8,0,12"/>
                     
                     <!-- Info -->
-                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="16" Margin="0,0,0,12">
+                    <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="12" LineHeight="18">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" LineHeight="18">
                                 Registry backups are created automatically before applying settings. Each backup includes:
                             </TextBlock>
                             <StackPanel Margin="12,8,0,0">
-                                <TextBlock Text="• .ashb file - Full backup data for app restore" Foreground="#8B949E" FontSize="11"/>
-                                <TextBlock Text="• restore_*.reg - Reverts to original values (double-click to apply)" Foreground="#8B949E" FontSize="11"/>
-                                <TextBlock Text="• applied_*.reg - Shows what settings were applied (reference)" Foreground="#8B949E" FontSize="11"/>
+                                <TextBlock Text="• .ashb file - Full backup data for app restore" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
+                                <TextBlock Text="• restore_*.reg - Reverts to original values (double-click to apply)" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
+                                <TextBlock Text="• applied_*.reg - Shows what settings were applied (reference)" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="11"/>
                             </StackPanel>
                             <Button Style="{StaticResource SecondaryButtonStyle}" Content="📂 Open Backup Folder" 
                                     Command="{Binding OpenBackupFolderCommand}"
@@ -1041,13 +1139,13 @@
                     </Border>
 
                     <!-- Empty State -->
-                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="32"
+                    <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" Padding="32"
                             Visibility="{Binding HasNoBackups, Converter={StaticResource BoolToVis}}">
                         <StackPanel HorizontalAlignment="Center">
                             <TextBlock Text="📦" FontSize="40" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                            <TextBlock Text="No backups yet" FontSize="16" FontWeight="SemiBold" Foreground="#F0F6FC" HorizontalAlignment="Center"/>
+                            <TextBlock Text="No backups yet" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="Backups are created automatically when you apply settings" 
-                                       Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                       Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/>
                         </StackPanel>
                     </Border>
 
@@ -1055,7 +1153,7 @@
                     <ItemsControl ItemsSource="{Binding Backups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" 
+                                <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" 
                                         Padding="14" Margin="0,0,0,8">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -1063,18 +1161,22 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <Border Width="44" Height="44" CornerRadius="10" Background="#1A58A6FF" Margin="0,0,14,0">
+                                        <Border Width="44" Height="44" CornerRadius="10" Background="{DynamicResource InfoBadgeBrush}" Margin="0,0,14,0">
                                             <TextBlock Text="📦" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="#F0F6FC">
+                                            <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}">
                                                 <Run Text="{Binding CreatedAt, StringFormat='{}{0:MMM d, yyyy}'}"/>
-                                                <Run Text=" at " Foreground="#8B949E"/>
+                                                <Run Text=" at " Foreground="{DynamicResource TextSecondaryBrush}"/>
                                                 <Run Text="{Binding CreatedAt, StringFormat='{}{0:h:mm tt}'}"/>
                                             </TextBlock>
-                                            <TextBlock FontSize="12" Foreground="#8B949E">
-                                                <Run Text="{Binding SettingsCount, Mode=OneWay}"/>
-                                                <Run Text=" registry entries"/>
+                                            <Border CornerRadius="4" Padding="6,1" Margin="0,3,0,3" Background="{DynamicResource SuccessBadgeBrush}" HorizontalAlignment="Left"
+                                                    Visibility="{Binding IsBaseline, Converter={StaticResource BoolToVis}}"
+                                                    ToolTip="The first backup taken on this PC — its original state. Never deleted automatically.">
+                                                <TextBlock Text="★ Original state (baseline)" FontSize="10" Foreground="{DynamicResource SuccessTextBrush}"/>
+                                            </Border>
+                                            <TextBlock FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap">
+                                                <Run Text="{Binding Description, Mode=OneWay}"/>
                                             </TextBlock>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal">
@@ -1119,49 +1221,51 @@
                             HorizontalAlignment="Center" Padding="0" Margin="0,0,0,16">
                         <Image Source="/Resources/logo.png" Height="50"/>
                     </Button>
-                    <TextBlock Text="Windows 11 Security Hardening" FontSize="22" FontWeight="Bold" 
-                               Foreground="#F0F6FC" HorizontalAlignment="Center"/>
-                    <TextBlock Text="{Binding VersionInfo}" FontSize="12" Foreground="#8B949E" 
+                    <TextBlock Text="Windows 10 &amp; 11 Security Hardening" FontSize="22" FontWeight="Bold" 
+                               Foreground="{DynamicResource TextHeadingBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding VersionInfo}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" 
                                HorizontalAlignment="Center" Margin="0,4,0,4"/>
-                    <TextBlock Text="{Binding BuildInfo}" FontSize="10" Foreground="#6E7681" 
+                    <TextBlock Text="{Binding BuildInfo}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}" 
                                HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <TextBlock Text="{Binding PerUserTargetText}" FontSize="10" Foreground="{DynamicResource TextMutedBrush}"
+                               HorizontalAlignment="Center" Margin="0,2,0,0"/>
 
                     <!-- CRITICAL BACKUP WARNING -->
-                    <Border Background="#1AD92E2E" BorderBrush="#D93025" BorderThickness="1" 
+                    <Border Background="#1AD92E2E" BorderBrush="{DynamicResource AlertRedBrush}" BorderThickness="1" 
                             CornerRadius="8" Padding="20" Margin="0,0,0,16">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <TextBlock Text="🔴" FontSize="18" Margin="0,0,10,0"/>
-                                <TextBlock Text="Critical: Backup Your System" FontSize="15" FontWeight="SemiBold" Foreground="#D93025"/>
+                                <TextBlock Text="Critical: Backup Your System" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource AlertRedBrush}"/>
                             </StackPanel>
-                            <TextBlock TextWrapping="Wrap" Foreground="#F0F6FC" FontSize="13" LineHeight="22">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextHeadingBrush}" FontSize="13" LineHeight="22">
                                 Always use the Backup section to create a System Restore Point before running this application or changing any settings. Do not rely on the app to create your backups for you! A manual System Restore Point gives you the best protection against any issues.
                             </TextBlock>
                             <Button Command="{Binding OpenSystemRestoreCommand}" 
                                     Content="Open System Restore" 
-                                    Background="#D93025" Foreground="White" 
+                                    Background="{DynamicResource AlertRedBrush}" Foreground="White" 
                                     BorderThickness="0" Padding="16,8" Margin="0,12,0,0"
                                     HorizontalAlignment="Left" Cursor="Hand"/>
                         </StackPanel>
                     </Border>
 
                     <!-- Disclaimer -->
-                    <Border Background="#1AD29922" BorderBrush="#D29922" BorderThickness="1" 
+                    <Border Background="{DynamicResource WarningBadgeBrush}" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" 
                             CornerRadius="8" Padding="20" Margin="0,0,0,16">
                         <StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                 <TextBlock Text="⚠️" FontSize="18" Margin="0,0,10,0"/>
-                                <TextBlock Text="Important Disclaimer" FontSize="15" FontWeight="SemiBold" Foreground="#D29922"/>
+                                <TextBlock Text="Important Disclaimer" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource WarningBrush}"/>
                             </StackPanel>
-                            <TextBlock TextWrapping="Wrap" Foreground="#F0F6FC" FontSize="13" LineHeight="20">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextHeadingBrush}" FontSize="13" LineHeight="20">
                                 AtlantHarden provides this Windows 11 hardening application as-is. Always take a full backup of your registry before running it, regardless of the backup/recovery options in the application. Enabling all security settings will significantly change the behavior of your system - do your own research and enable settings at your own risk. AtlantHarden is not responsible for your choices.
                             </TextBlock>
                         </StackPanel>
                     </Border>
 
-                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="20">
+                    <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" Padding="20">
                         <StackPanel>
-                            <TextBlock Text="Features" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,12"/>
+                            <TextBlock Text="Features" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}" Margin="0,0,0,12"/>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -1173,42 +1277,42 @@
                                     <RowDefinition/>
                                     <RowDefinition/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="🛡️ Windows Defender" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="🎯 Attack Surface Reduction" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="🔐 Credential Protection" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="🌐 Browser Hardening" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="📋 Logging &amp; Auditing" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="🔒 TLS &amp; Cryptography" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="💾 Automatic Backups" Foreground="#8B949E" FontSize="12"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="🔄 System Restore Points" Foreground="#8B949E" FontSize="12"/>
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="🛡️ Windows Defender" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" Text="🎯 Attack Surface Reduction" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="🔐 Credential Protection" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="🌐 Browser Hardening" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="📋 Logging &amp; Auditing" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="🔒 TLS &amp; Cryptography" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12" Margin="0,0,0,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="💾 Automatic Backups" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="🔄 System Restore Points" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="12"/>
                             </Grid>
                         </StackPanel>
                     </Border>
 
                     <!-- License -->
-                    <Border Background="#0D1117" CornerRadius="8" BorderBrush="#21262D" BorderThickness="1" Padding="20" Margin="0,16,0,0">
+                    <Border Background="{DynamicResource BackgroundDarkBrush}" CornerRadius="8" BorderBrush="{DynamicResource BackgroundLightBrush}" BorderThickness="1" Padding="20" Margin="0,16,0,0">
                         <StackPanel>
-                            <TextBlock Text="License" FontSize="15" FontWeight="SemiBold" Foreground="#F0F6FC" Margin="0,0,0,12"/>
-                            <TextBlock TextWrapping="Wrap" Foreground="#8B949E" FontSize="13" LineHeight="20">
-                                AtlantHarden is <Run FontWeight="SemiBold" Foreground="#F0F6FC">free to use</Run> — including on your own or your organization's systems — as long as you don't charge for its use. Using it as a paid product or service, or to secure clients' systems for a fee, requires a commercial licensing agreement with <Run FontWeight="SemiBold" Foreground="#F0F6FC">Atlant Security LTD</Run>.
+                            <TextBlock Text="License" FontSize="15" FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}" Margin="0,0,0,12"/>
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="13" LineHeight="20">
+                                AtlantHarden is <Run FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}">free to use</Run> — including on your own or your organization's systems — as long as you don't charge for its use. Using it as a paid product or service, or to secure clients' systems for a fee, requires a commercial licensing agreement with <Run FontWeight="SemiBold" Foreground="{DynamicResource TextHeadingBrush}">Atlant Security LTD</Run>.
                             </TextBlock>
-                            <TextBlock TextWrapping="Wrap" Foreground="#6E7681" FontSize="11" Margin="0,10,0,0">
+                            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,10,0,0">
                                 The source code is published separately for audit only, under a different license that grants no right to use the source. See the LICENSE file in the repository.
                             </TextBlock>
                             <Button Command="{Binding OpenLicenseContactCommand}"
                                     Content="Request a commercial license"
-                                    Background="#238636" Foreground="White"
+                                    Background="{DynamicResource SuccessBrush}" Foreground="White"
                                     BorderThickness="0" Padding="16,8" Margin="0,14,0,0"
                                     HorizontalAlignment="Left" Cursor="Hand"/>
                         </StackPanel>
                     </Border>
 
-                    <TextBlock Text="{Binding CopyrightText}" FontSize="11" Foreground="#6E7681"
+                    <TextBlock Text="{Binding CopyrightText}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                                HorizontalAlignment="Center" Margin="0,20,0,4"/>
                     <Button Command="{Binding OpenAtlantSecurityCommand}" 
                             Background="Transparent" BorderThickness="0" Cursor="Hand"
                             HorizontalAlignment="Center" Padding="0">
-                        <TextBlock Text="https://atlantsecurity.com" FontSize="11" Foreground="#58A6FF" 
+                        <TextBlock Text="https://atlantsecurity.com" FontSize="11" Foreground="{DynamicResource InfoBrush}" 
                                    TextDecorations="Underline"/>
                     </Button>
                 </StackPanel>
@@ -1217,12 +1321,18 @@
             <!-- Processing Overlay -->
             <Border Background="#CC000000" Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVis}}">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Border Width="60" Height="60" CornerRadius="30" Background="#21262D" Margin="0,0,0,16">
+                    <Border Width="60" Height="60" CornerRadius="30" Background="{DynamicResource BackgroundLightBrush}" Margin="0,0,0,16">
                         <TextBlock Text="⚡" FontSize="28" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Border>
-                    <TextBlock Text="{Binding StatusMessage}" FontSize="16" Foreground="#F0F6FC" HorizontalAlignment="Center" Margin="0,0,0,12"/>
-                    <ProgressBar Width="200" Height="4" Background="#21262D" Foreground="#238636"
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="16" Foreground="{DynamicResource TextHeadingBrush}" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                    <ProgressBar Width="260" Height="4" Background="{DynamicResource BackgroundLightBrush}" Foreground="{DynamicResource SuccessBrush}"
                                  Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
+                    <TextBlock Text="{Binding ProgressText}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                    <Button Content="Cancel" HorizontalAlignment="Center" Margin="0,14,0,0" Padding="16,6"
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            ToolTip="Stop after the current setting. Changes already made stay, and the backup can undo them."
+                            Command="{Binding CancelOperationCommand}"
+                            Visibility="{Binding CanCancel, Converter={StaticResource BoolToVis}}"/>
                 </StackPanel>
             </Border>
         </Grid>
