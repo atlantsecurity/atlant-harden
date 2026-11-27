@@ -1,6 +1,9 @@
 using AtlantHarden.Models;
 using AtlantHarden.ViewModels;
+using System;
+using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Interop;
 using System.Windows.Controls;
 using System.Windows.Input;
 
@@ -11,6 +14,23 @@ namespace AtlantHarden.Views
         public MainWindow()
         {
             InitializeComponent();
+            SourceInitialized += (_, _) => UseDarkTitleBar(this);
+        }
+
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+        /// <summary>Dark window chrome to match the app (Windows 10 20H1+ / 11; ignored elsewhere).</summary>
+        public static void UseDarkTitleBar(Window window)
+        {
+            try
+            {
+                var hwnd = new WindowInteropHelper(window).Handle;
+                int on = 1;
+                if (DwmSetWindowAttribute(hwnd, 20, ref on, sizeof(int)) != 0)   // DWMWA_USE_IMMERSIVE_DARK_MODE
+                    DwmSetWindowAttribute(hwnd, 19, ref on, sizeof(int));        // pre-20H1 value
+            }
+            catch { }
         }
 
         private void CategoryButton_Click(object sender, RoutedEventArgs e)
