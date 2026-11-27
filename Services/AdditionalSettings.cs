@@ -888,7 +888,7 @@ namespace AtlantHarden.Services
                     // Delete first so re-applying a profile doesn't pile up duplicate rules.
                     ApplyCommand = $"netsh advfirewall firewall delete rule name=\"Block {name}.exe netconns\" >nul 2>&1 & " +
                                    $"netsh advfirewall firewall add rule name=\"Block {name}.exe netconns\" program=\"{path}\" dir=out enable=yes action=block profile=any && " +
-                                   $"netsh advfirewall firewall add rule name=\"Block {name}.exe netconns\" program=\"{path.Replace(@"\system32\", @"\SysWOW64\", StringComparison.OrdinalIgnoreCase)}\" dir=out enable=yes action=block profile=any",
+                                   $"netsh advfirewall firewall add rule name=\"Block {name}.exe netconns\" program=\"{path.Replace(@"\system32\", @"\SysWOW64\", System.StringComparison.OrdinalIgnoreCase)}\" dir=out enable=yes action=block profile=any",
                     RevertCommand = $"netsh advfirewall firewall delete rule name=\"Block {name}.exe netconns\"",
                     ImpactWarning = warning,
                     Tags = new[] { "firewall", "lolbin", name }
