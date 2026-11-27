@@ -158,7 +158,7 @@ namespace AtlantHarden.ViewModels
         public bool IsProcessing
         {
             get => _isProcessing;
-            set => SetProperty(ref _isProcessing, value);
+            set { if (SetProperty(ref _isProcessing, value)) OnPropertyChanged(nameof(ProgressText)); }
         }
 
         public int ProgressValue

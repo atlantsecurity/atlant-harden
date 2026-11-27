@@ -46,7 +46,14 @@ namespace AtlantHarden.Services
                     try
                     {
                         Directory.CreateDirectory(ProtectedDirectory);
-                        File.Copy(exe, target, overwrite: true);
+                        var src = new FileInfo(exe);
+                        var dst = new FileInfo(target);
+                        // Skip the ~70 MB copy when the protected copy is already this build.
+                        if (!dst.Exists || dst.Length != src.Length || dst.LastWriteTimeUtc != src.LastWriteTimeUtc)
+                        {
+                            File.Copy(exe, target, overwrite: true);
+                            File.SetLastWriteTimeUtc(target, src.LastWriteTimeUtc);
+                        }
                     }
                     catch (Exception ex)
                     {
