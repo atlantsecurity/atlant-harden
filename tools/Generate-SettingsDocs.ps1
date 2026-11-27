@@ -3,8 +3,13 @@
   profiles from the dumped settings data (_settings.json produced by reflection over the
   built assembly). Writes two Markdown reference docs.
 #>
+param(
+    [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string] $ZipDocsDir   # optional: where to write the combined docs shipped in the release zip
+)
 $ErrorActionPreference = 'Stop'
-$data = Get-Content 'C:\P\winh\_settings.json' -Raw | ConvertFrom-Json
+$docs = Join-Path $RepoRoot 'docs'
+$data = Get-Content (Join-Path $RepoRoot '_settings.json') -Raw | ConvertFrom-Json
 
 function Norm($path, $key) {
     $p = ("$path" -replace 'HKEY_LOCAL_MACHINE','HKLM' -replace 'HKEY_CURRENT_USER','HKCU').TrimEnd('\')
@@ -206,12 +211,14 @@ This document is the **complete reference for every setting in AtlantHarden** �
 **Maximum applies everything, including the full DISA STIG lockdowns.** That delivers maximum compliance but *will* add friction — password managers disabled, InPrivate/Incognito off, Controlled Folder Access, legacy file-format blocks, and more. Use it only where you want and understand that trade-off. Every change is backed up automatically; if a setting ever prevents the tool from relaunching, revert with the exported `restore_*.reg` file or Windows System Restore.
 '@
 
-$pages = WriteCategoryPages 'C:\P\winh\settings'
-WriteIndex $true  'AtlantHarden — Recommended Settings, Explained' $recPre 'C:\P\winh\Recommended-Settings-Explained.md' $pages
-WriteIndex $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre 'C:\P\winh\Maximum-Settings-Explained.md' $pages
-Write-Output "Wrote $($pages.Count) pages to C:\P\winh\settings"
+$pages = WriteCategoryPages (Join-Path $docs 'settings')
+WriteIndex $true  'AtlantHarden — Recommended Settings, Explained' $recPre (Join-Path $docs 'Recommended-Settings-Explained.md') $pages
+WriteIndex $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre (Join-Path $docs 'Maximum-Settings-Explained.md') $pages
+Write-Output "Wrote $($pages.Count) pages to $(Join-Path $docs 'settings')"
 
 # Combined single-file editions for the downloadable zip (local reading).
-New-Item -ItemType Directory -Force -Path 'C:\P\winh\zip' | Out-Null
-WriteCombined $true  'AtlantHarden — Recommended Settings, Explained' $recPre 'C:\P\winh\zip\Recommended-Settings-Explained.md' $false
-WriteCombined $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre 'C:\P\winh\zip\Maximum-Settings-Explained.md' $true
+if ($ZipDocsDir) {
+    New-Item -ItemType Directory -Force -Path $ZipDocsDir | Out-Null
+    WriteCombined $true  'AtlantHarden — Recommended Settings, Explained' $recPre (Join-Path $ZipDocsDir 'Recommended-Settings-Explained.md') $false
+    WriteCombined $false 'AtlantHarden — Maximum (All) Settings, Explained' $maxPre (Join-Path $ZipDocsDir 'Maximum-Settings-Explained.md') $true
+}

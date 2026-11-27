@@ -1,9 +1,15 @@
 <#
-  Reflection dump of every HardeningSetting to C:\P\winh\_settings.json, in the schema
+  Reflection dump of every HardeningSetting to <repo>\_settings.json, in the schema
   Generate-SettingsDocs.ps1 expects. Run against the built assembly, then run the doc generator.
 #>
+param(
+    [string] $RepoRoot = (Split-Path -Parent $PSScriptRoot),
+    [string] $Dll
+)
 $ErrorActionPreference = 'Stop'
-$dll = 'C:\P\winh\AtlantSecurityHardening\bin\Release\net8.0-windows\AtlantHarden.dll'
+if (-not $Dll) { $Dll = Join-Path $RepoRoot 'bin\Release\net8.0-windows\AtlantHarden.dll' }
+$dll = $Dll
+$outJson = Join-Path $RepoRoot '_settings.json'
 Add-Type -Path $dll
 
 $svc = [AtlantHarden.Services.HardeningService]::new()
@@ -34,5 +40,5 @@ $out = foreach ($s in $all) {
     }
 }
 
-$out | ConvertTo-Json -Depth 5 | Set-Content -Path 'C:\P\winh\_settings.json' -Encoding utf8
-Write-Output "Dumped $($out.Count) settings to C:\P\winh\_settings.json"
+$out | ConvertTo-Json -Depth 5 | Set-Content -Path $outJson -Encoding utf8
+Write-Output "Dumped $($out.Count) settings to $outJson"

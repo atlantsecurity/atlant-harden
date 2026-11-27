@@ -6,9 +6,9 @@ AtlantHarden is a comprehensive Windows 10/11 security hardening application wit
 
 ## ⬇️ Download
 
-### [Download AtlantHarden v2.1 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
+### [Download AtlantHarden v2.2 for Windows](https://github.com/atlantsecurity/atlant-harden/releases/latest/download/AtlantHarden.zip)
 
-Single `.zip`, ~63 MB, **self-contained** — no .NET install required. Extract it, then right-click `AtlantHarden.exe` → **Run as administrator**. It's not code-signed yet, so SmartScreen may prompt — choose *More info → Run anyway*. See all [releases and notes](https://github.com/atlantsecurity/atlant-harden/releases/latest).
+Single `.zip`, ~63 MB, **self-contained** — no .NET install required. `AtlantHarden.exe` is **code-signed by Atlant Security LTD**. Extract it, then right-click `AtlantHarden.exe` → **Run as administrator**. See all [releases and notes](https://github.com/atlantsecurity/atlant-harden/releases/latest).
 
 ## Features
 
@@ -85,14 +85,17 @@ Three curated profiles, each with **Apply** and a **Show settings** button that 
 
 Bloatware removal and the privacy cleanup are kept **separate** from these profiles — they're reached from the dashboard's **Cleanup & Privacy** section (a one-click *Tighten Up Privacy* and a review-first *Clean Up Bloat*), so applying a security profile never uninstalls an app.
 
-**Self-protection:** before enabling any setting, AtlantHarden allow-lists its own executable for Microsoft Defender ASR and Controlled Folder Access, and keeps Explorer SmartScreen at an overridable level — so this (unsigned) tool can always be relaunched to revert.
+**Security Score:** the dashboard score measures the **Recommended** profile — apply Recommended and you're at 100% "Protected". Maximum-only lockdowns are shown separately as optional extras and never count against you. Settings whose state can't be read on your PC are left out rather than counted as failures.
+
+**Self-protection:** before enabling any setting, AtlantHarden installs a protected copy of itself to `%ProgramFiles%\AtlantHarden` (admin-only write), adds a Start-menu shortcut, and allow-lists only that copy for Microsoft Defender ASR and Controlled Folder Access — so the tool can always be relaunched to revert, without exempting a user-writable folder like Downloads.
 
 ### 💾 Backup & Restore
-- **Automatic Backups** - Creates backup before applying any changes
-- **System Restore Points** - Create Windows System Restore points from the app
-- **Multiple Versions** - Keeps up to 20 timestamped backup versions
-- **One-Click Restore** - Easily revert to any previous state
-- **REG File Export** - Also exports .reg files for manual restoration
+- **Automatic Backups** - Before every change, records the prior state of each setting being turned on *or* off: registry values exactly (including mirror locations), plus Defender/ASR, firewall, audit-policy, file-association and command-based settings
+- **Original-state baseline** - The first backup on a PC is kept forever as its original state
+- **System Restore Points** - Create (and verify) Windows System Restore points from the app; offered on first launch
+- **Multiple Versions** - Keeps up to 20 timestamped backups plus the baseline
+- **One-Click Restore** - Puts every recorded setting back and re-reads the PC's state (removed apps are not reinstalled)
+- **REG File Export** - Also exports UTF-16 `.reg` files for manual restoration of registry values
 
 ### 📦 Configuration Import/Export
 - **Export Configuration** - Save your selected settings to a JSON file
@@ -122,7 +125,7 @@ Bloatware removal and the privacy cleanup are kept **separate** from these profi
 
 1. Download the latest release (`AtlantHarden.zip`) and extract it
 2. Right-click `AtlantHarden.exe` → **Run as administrator**
-   - The download is not yet code-signed, so SmartScreen may prompt — choose *More info → Run anyway*
+3. After the first apply, launch AtlantHarden from the Start menu (protected copy in Program Files)
 
 ## Command Line Usage
 
@@ -135,6 +138,10 @@ Options:
   --silent, -s           Run in silent mode (no GUI, for automation)
   --help, -h, /?         Show help message
 
+Exit codes (--silent):
+  0  all settings applied        2  bad arguments or configuration
+  1  error (e.g. not elevated)   3  some settings failed
+
 Examples:
   AtlantHarden.exe
       Launch the application normally with GUI
@@ -145,6 +152,8 @@ Examples:
   AtlantHarden.exe --config myconfig.json --apply --silent
       Apply configuration silently and exit (for automation/scripts)
 ```
+
+`--silent` prints results to the calling console and requires both `--config` and `--apply`. Every change command, its exit code and error output is logged to `%LOCALAPPDATA%\AtlantHarden\Logs\activity.log`.
 
 ## Usage
 
@@ -165,9 +174,9 @@ Do not rely solely on the app's automatic backups. A manual System Restore Point
 ### Disabling Settings
 
 1. Navigate to the category containing the setting
-2. Toggle the setting OFF (it will show as enabled but unchecked)
-3. Click "Apply Selected"
-4. The setting will be reverted to its default/disabled state
+2. Toggle the setting OFF — the row shows **Will revert** and the header shows the pending-changes count
+3. Click "Apply Selected" and review the exact list of changes
+4. The setting will be reverted to its default/disabled state (a value another enabled setting still needs is kept)
 
 ### Restoring from Backup
 
@@ -198,7 +207,16 @@ Do not rely solely on the app's automatic backups. A manual System Restore Point
 3. Build the solution (Release configuration recommended)
 4. Output will be in `bin/Release/net8.0-windows/`
 
-To produce the self-contained single-file release (`AtlantHarden.exe`, no .NET install needed):
+Run the unit tests with `dotnet test tests/AtlantHarden.Tests`. Every push and pull request is built and tested on Windows by GitHub Actions (`.github/workflows/build.yml`).
+
+To produce the signed release zip (build → sign with Atlant Security's Azure Artifact Signing account → verify → regenerate docs → package):
+
+```
+az login --tenant atlantsecurity.com
+pwsh -File tools/Package-Release.ps1
+```
+
+The unsigned self-contained single-file build on its own:
 
 ```
 dotnet publish AtlantHarden.csproj -c Release -r win-x64 --self-contained true ^
