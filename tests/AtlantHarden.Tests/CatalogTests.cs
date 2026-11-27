@@ -22,6 +22,15 @@ namespace AtlantHarden.Tests
         }
 
         [Fact]
+        public void WindowsUpdate_IsInRecommended_ExceptMaximumOnlyOptions()
+        {
+            var wu = WindowsUpdateSettings.GetAllSettings();
+            Assert.NotEmpty(wu);
+            var notRecommended = wu.Where(s => !RecommendedProfile.IsRecommended(s)).Select(s => s.Id).OrderBy(i => i).ToArray();
+            Assert.Equal(new[] { "WU_DisablePause", "WU_DownloadOverMetered", "WU_LatestUpdatesAsap" }, notRecommended);
+        }
+
+        [Fact]
         public void RegistryMultiString_SplitsSeparatedString()
         {
             Assert.Equal(new[] { "a", "b" }, RegistryService.ToMultiString("a\0b"));
